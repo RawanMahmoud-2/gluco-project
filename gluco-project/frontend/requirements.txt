@@ -1,3 +1,6 @@
 streamlit
 requests
 pandas
+numpy
+streamlit-autorefresh
+scikit-learn
