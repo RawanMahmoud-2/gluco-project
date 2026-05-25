@@ -169,18 +169,43 @@ header {
 }
 
 /* ===================================================== */
+/* SIDEBAR */
+/* ===================================================== */
+
+section[data-testid="stSidebar"] {
+    display: none;
+}
+
+/* ===================================================== */
 /* TITLE */
 /* ===================================================== */
 
 .main-title {
-    font-size: 72px;
-    font-weight: 800;
-    text-align: center;
-    background: linear-gradient(90deg, #9ed8ff, #5db8ff, #d8ecff);
+
+    font-size: 88px;
+
+    font-weight: 900;
+
+    text-align: left;
+
+    line-height: 1;
+
+    letter-spacing: 1px;
+
+    background: linear-gradient(
+        90deg,
+        #e7f7ff,
+        #8fd3ff,
+        #dff4ff
+    );
+
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-top: 10px;
-    margin-bottom: 5px;
+
+    text-shadow:
+    0px 0px 25px rgba(120,190,255,0.25);
+
+    margin-bottom: 10px;
 }
 
 /* ===================================================== */
@@ -188,10 +213,20 @@ header {
 /* ===================================================== */
 
 .subtitle {
-    text-align: center;
-    font-size: 20px;
+
+    text-align: left;
+
+    font-size: 24px;
+
+    font-weight: 500;
+
     color: #d7ecff;
-    margin-bottom: 35px;
+
+    letter-spacing: 0.5px;
+
+    margin-top: 8px;
+
+    opacity: 0.95;
 }
 
 /* ===================================================== */
@@ -199,23 +234,10 @@ header {
 /* ===================================================== */
 
 .section-title {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700;
     color: #eef7ff;
     margin-bottom: 15px;
-}
-
-/* ===================================================== */
-/* GLASS CARD */
-/* ===================================================== */
-
-.card {
-    background: rgba(255,255,255,0.08);
-    border-radius: 28px;
-    padding: 28px;
-    border: 1px solid rgba(255,255,255,0.12);
-    backdrop-filter: blur(16px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
 }
 
 /* ===================================================== */
@@ -238,9 +260,9 @@ input, textarea {
 }
 
 /* ===================================================== */
-/* CLEAN WHITE SELECTBOX FIX */
+/* SELECTBOX */
 /* ===================================================== */
-/* main container */
+
 div[data-baseweb="select"] {
     background: white !important;
     border-radius: 14px !important;
@@ -248,14 +270,12 @@ div[data-baseweb="select"] {
     box-shadow: none !important;
 }
 
-/* inner control */
 div[data-baseweb="select"] > div {
     background: white !important;
     border: none !important;
     box-shadow: none !important;
 }
 
-/* input field (this is where the "white line" comes from) */
 div[data-baseweb="select"] input {
     background: white !important;
     color: black !important;
@@ -265,31 +285,95 @@ div[data-baseweb="select"] input {
     box-shadow: none !important;
 }
 
-/* remove focus glow (IMPORTANT) */
 div[data-baseweb="select"]:focus-within {
     outline: none !important;
     box-shadow: none !important;
 }
 
-/* selected text */
 div[data-baseweb="select"] * {
     color: black !important;
 }
 
-/* remove weird pseudo borders */
 div[data-baseweb="select"] div {
     border: none !important;
 }
 
 /* ===================================================== */
-/* BIG NUMBER */
+/* METRIC CARD */
 /* ===================================================== */
 
-.big-number {
-    font-size: 50px;
-    font-weight: 800;
-    color: #8bd0ff;
-    text-shadow: 0px 0px 20px rgba(139,208,255,0.45);
+.metric-card {
+
+    background:
+    rgba(255,255,255,0.08);
+
+    border-radius: 30px;
+
+    padding: 40px;
+
+    border:
+    1px solid rgba(255,255,255,0.12);
+
+    backdrop-filter: blur(16px);
+
+    box-shadow:
+    0 8px 32px rgba(0,0,0,0.35);
+
+    text-align: center;
+
+    margin-top: 10px;
+
+    margin-bottom: 30px;
+}
+
+/* ===================================================== */
+/* BIG GLUCOSE */
+/* ===================================================== */
+
+.big-glucose {
+
+    font-size: 82px;
+
+    font-weight: 900;
+
+    text-shadow:
+    0px 0px 25px rgba(255,255,255,0.18);
+
+    margin-bottom: 10px;
+}
+
+/* ===================================================== */
+/* STATUS TEXT */
+/* ===================================================== */
+
+.status-text {
+
+    font-size: 28px;
+
+    font-weight: 700;
+
+    color: #dff4ff;
+
+    letter-spacing: 1px;
+}
+
+/* ===================================================== */
+/* METRIC CONTAINERS */
+/* ===================================================== */
+
+[data-testid="metric-container"] {
+
+    background:
+    rgba(255,255,255,0.06);
+
+    border:
+    1px solid rgba(255,255,255,0.10);
+
+    padding: 18px;
+
+    border-radius: 22px;
+
+    backdrop-filter: blur(12px);
 }
 
 /* ===================================================== */
@@ -327,23 +411,39 @@ div[data-baseweb="select"] div {
 # HEADER
 # =========================================================
 
-col1, col2 = st.columns([1, 3])
+col1, col2 = st.columns([1.2, 4])
 
 with col1:
 
     if os.path.exists(logo_path):
 
-        st.image(logo_path, width=180)
+        st.image(
+            logo_path,
+            width=260
+        )
 
 with col2:
 
     st.markdown(
-        '<div class="main-title">Gluco-Guard</div>',
-        unsafe_allow_html=True
-    )
+        """
+        <div style="
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            height:100%;
+            margin-top:25px;
+        ">
 
-    st.markdown(
-        '<div class="subtitle">AI-Powered Non-Invasive Glucose Monitoring</div>',
+            <div class="main-title">
+                Gluco-Guard
+            </div>
+
+            <div class="subtitle">
+                Stay aware, stay healthy, stay in Guard
+            </div>
+
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -351,7 +451,10 @@ with col2:
 # PATIENT INFO
 # =========================================================
 
-st.markdown("## Patient Information")
+st.markdown(
+    '<div class="section-title">Patient Information</div>',
+    unsafe_allow_html=True
+)
 
 col1, col2, col3 = st.columns(3)
 
@@ -484,7 +587,10 @@ if len(ppg) > 0:
     # LIVE PPG GRAPH
     # =====================================================
 
-    st.markdown("## Live PPG Signal")
+    st.markdown(
+        '<div class="section-title">Live PPG Signal</div>',
+        unsafe_allow_html=True
+    )
 
     df = pd.DataFrame({"PPG": ppg})
 
@@ -516,7 +622,10 @@ if len(ppg) > 0:
     # DAILY ANALYTICS
     # =====================================================
 
-    st.markdown("## Daily Glucose Trend")
+    st.markdown(
+        '<div class="section-title">Daily Glucose Trend</div>',
+        unsafe_allow_html=True
+    )
 
     st.line_chart(
         log_df.set_index("Time")["Glucose"]
