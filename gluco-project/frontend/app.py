@@ -124,11 +124,12 @@ def get_status(glucose, fasting):
 st.markdown("""
 <style>
 
+/* ===================================================== */
 /* MAIN BACKGROUND */
+/* ===================================================== */
 
 .stApp {
-    background:
-    linear-gradient(
+    background: linear-gradient(
         135deg,
         #06141f 0%,
         #0c2433 35%,
@@ -138,160 +139,184 @@ st.markdown("""
     color: white;
 }
 
+/* ===================================================== */
 /* BACKGROUND LOGO */
+/* ===================================================== */
 
 .stApp::before {
-
     content: "";
-
     position: fixed;
-
     top: 50%;
     left: 50%;
-
     width: 700px;
     height: 700px;
-
     transform: translate(-50%, -50%);
-
-    background-image:
-    url("https://i.imgur.com/Qj8Z4bR.png");
-
+    background-image: url("https://i.imgur.com/Qj8Z4bR.png");
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
-
-    opacity: 0.05;
-
+    opacity: 0.06;
+    filter: grayscale(100%) hue-rotate(180deg) brightness(1.2);
     z-index: -1;
 }
 
+/* ===================================================== */
 /* HIDE HEADER */
+/* ===================================================== */
 
 header {
     visibility: hidden;
 }
 
-/* TITLES */
+/* ===================================================== */
+/* TITLE */
+/* ===================================================== */
 
 .main-title {
-
     font-size: 72px;
     font-weight: 800;
-
-    background:
-    linear-gradient(
-        90deg,
-        #9ed8ff,
-        #5db8ff,
-        #d8ecff
-    );
-
+    text-align: center;
+    background: linear-gradient(90deg, #9ed8ff, #5db8ff, #d8ecff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
 
+/* ===================================================== */
+/* SUBTITLE */
+/* ===================================================== */
+
 .subtitle {
-
+    text-align: center;
     font-size: 20px;
-
     color: #d7ecff;
-
     margin-bottom: 35px;
 }
 
-/* GLASS CARD */
+/* ===================================================== */
+/* SECTION TITLE */
+/* ===================================================== */
 
-.card {
-
-    background: rgba(255,255,255,0.08);
-
-    border-radius: 28px;
-
-    padding: 28px;
-
-    border:
-    1px solid rgba(255,255,255,0.12);
-
-    backdrop-filter: blur(16px);
-
-    box-shadow:
-    0 8px 32px rgba(0,0,0,0.35);
+.section-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #eef7ff;
+    margin-bottom: 15px;
 }
 
-/* INPUTS */
+/* ===================================================== */
+/* GLASS CARD */
+/* ===================================================== */
+
+.card {
+    background: rgba(255,255,255,0.08);
+    border-radius: 28px;
+    padding: 28px;
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+
+/* ===================================================== */
+/* LABELS */
+/* ===================================================== */
 
 label {
     color: #eaf6ff !important;
     font-weight: 600 !important;
 }
 
+/* ===================================================== */
+/* INPUTS */
+/* ===================================================== */
+
 input, textarea {
-
     background-color: white !important;
-
     color: black !important;
-
     border-radius: 12px !important;
 }
 
-/* SELECTBOX */
-
+/* ===================================================== */
+/* CLEAN WHITE SELECTBOX FIX */
+/* ===================================================== */
+/* main container */
 div[data-baseweb="select"] {
-
     background: white !important;
-
     border-radius: 14px !important;
+    border: 1px solid rgba(0,0,0,0.12) !important;
+    box-shadow: none !important;
 }
 
+/* inner control */
+div[data-baseweb="select"] > div {
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* input field (this is where the "white line" comes from) */
+div[data-baseweb="select"] input {
+    background: white !important;
+    color: black !important;
+    caret-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* remove focus glow (IMPORTANT) */
+div[data-baseweb="select"]:focus-within {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* selected text */
 div[data-baseweb="select"] * {
     color: black !important;
 }
 
-/* METRIC CARD */
-
-.metric-card {
-
-    background: rgba(255,255,255,0.08);
-
-    border-radius: 24px;
-
-    padding: 25px;
-
-    text-align: center;
-
-    border:
-    1px solid rgba(255,255,255,0.1);
+/* remove weird pseudo borders */
+div[data-baseweb="select"] div {
+    border: none !important;
 }
 
-/* BIG GLUCOSE */
+/* ===================================================== */
+/* BIG NUMBER */
+/* ===================================================== */
 
-.big-glucose {
-
-    font-size: 72px;
-
-    font-weight: 900;
-
-    margin-bottom: 10px;
+.big-number {
+    font-size: 50px;
+    font-weight: 800;
+    color: #8bd0ff;
+    text-shadow: 0px 0px 20px rgba(139,208,255,0.45);
 }
 
-/* STATUS TEXT */
+/* ===================================================== */
+/* BUTTON */
+/* ===================================================== */
 
-.status-text {
-
-    font-size: 24px;
-
+.stDownloadButton button {
+    background: linear-gradient(90deg, #3a8dff, #6fb6ff);
+    color: white;
+    border-radius: 16px;
+    padding: 12px 24px;
     font-weight: 700;
+    border: none;
 }
 
+.stDownloadButton button:hover {
+    transform: scale(1.03);
+    box-shadow: 0px 0px 18px rgba(120,190,255,0.4);
+}
+
+/* ===================================================== */
 /* CHART */
+/* ===================================================== */
 
 [data-testid="stLineChart"] {
-
     background: rgba(255,255,255,0.05);
-
     border-radius: 22px;
-
     padding: 15px;
 }
 
