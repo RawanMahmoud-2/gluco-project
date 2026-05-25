@@ -1,8 +1,8 @@
 import streamlit as st
-import json
-import os
+import requests
 import pandas as pd
 import time
+import os
 
 # =========================================================
 # PAGE CONFIG
@@ -15,13 +15,19 @@ st.set_page_config(
 )
 
 # =========================================================
+# BACKEND API
+# =========================================================
+
+API_URL = "https://YOUR-BACKEND.onrender.com/data"
+
+# =========================================================
 # LOGO PATH
 # =========================================================
 
 logo_path = "gluco_guard_logo.png"
 
 # =========================================================
-# CSS STYLING (FIXED WHITE SELECTBOX)
+# CSS STYLING
 # =========================================================
 
 st.markdown("""
@@ -141,9 +147,9 @@ input, textarea {
 }
 
 /* ===================================================== */
-/* CLEAN WHITE SELECTBOX FIX */
+/* SELECTBOX */
 /* ===================================================== */
-/* main container */
+
 div[data-baseweb="select"] {
     background: white !important;
     border-radius: 14px !important;
@@ -151,14 +157,12 @@ div[data-baseweb="select"] {
     box-shadow: none !important;
 }
 
-/* inner control */
 div[data-baseweb="select"] > div {
     background: white !important;
     border: none !important;
     box-shadow: none !important;
 }
 
-/* input field (this is where the "white line" comes from) */
 div[data-baseweb="select"] input {
     background: white !important;
     color: black !important;
@@ -168,18 +172,15 @@ div[data-baseweb="select"] input {
     box-shadow: none !important;
 }
 
-/* remove focus glow (IMPORTANT) */
 div[data-baseweb="select"]:focus-within {
     outline: none !important;
     box-shadow: none !important;
 }
 
-/* selected text */
 div[data-baseweb="select"] * {
     color: black !important;
 }
 
-/* remove weird pseudo borders */
 div[data-baseweb="select"] div {
     border: none !important;
 }
@@ -239,14 +240,24 @@ with col1:
         st.warning("Logo not found")
 
 with col2:
-    st.markdown('<div class="main-title">Gluco-Guard</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">AI-Powered Non-Invasive Glucose Monitoring</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="main-title">Gluco-Guard</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="subtitle">AI-Powered Non-Invasive Glucose Monitoring</div>',
+        unsafe_allow_html=True
+    )
 
 # =========================================================
 # PATIENT INFO
 # =========================================================
 
-st.markdown('<div class="section-title">Patient Information</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="section-title">Patient Information</div>',
+    unsafe_allow_html=True
+)
 
 col1, col2 = st.columns(2)
 
@@ -271,41 +282,46 @@ st.markdown("<br>", unsafe_allow_html=True)
 # LIVE PPG SECTION
 # =========================================================
 
+st.markdown(
+    '<div class="section-title">Live PPG Signal</div>',
+    unsafe_allow_html=True
+)
+
 placeholder = st.empty()
+
+# =========================================================
+# AUTO REFRESH LOOP
+# =========================================================
 
 while True:
 
-    if os.path.exists("latest_ppg.json"):
+    try:
 
-        try:
-            with open("latest_ppg.json", "r") as f:
-                ppg = json.load(f)
+        response = requests.get(API_URL)
 
-            df = pd.DataFrame({"PPG": ppg})
+        if response.status_code == 200:
+
+            data = response.json()
+
+            ppg = data.get("ppg", [])
 
             with placeholder.container():
 
-                st.markdown(
-                    '<div class="section-title">Live PPG Signal</div>',
-                    unsafe_allow_html=True
-                )
+                if len(ppg) > 0:
 
-                st.line_chart(df)
+                    df = pd.DataFrame({"PPG": ppg})
 
-                st.markdown("<br>", unsafe_allow_html=True)
+                    st.line_chart(df)
 
-                with open("latest_ppg.json", "rb") as file:
-                    st.download_button(
-                        label="Download JSON File",
-                        data=file,
-                        file_name="latest_ppg.json",
-                        mime="application/json"
-                    )
+                    st.success(f"Received {len(ppg)} samples")
 
-        except Exception as e:
-            st.error(e)
+                else:
+                    st.warning("Waiting for ESP32 Data...")
 
-    else:
-        st.warning("Waiting for ESP32 Data...")
+        else:
+            st.error("Backend connection failed")
+
+    except Exception as e:
+        st.error(f"Error: {e}")
 
     time.sleep(1)
