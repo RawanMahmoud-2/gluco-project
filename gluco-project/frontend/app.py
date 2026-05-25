@@ -18,7 +18,7 @@ st.set_page_config(
 # BACKEND API
 # =========================================================
 
-API_URL = "https://YOUR-BACKEND.onrender.com/data"
+API_URL = "https://gluco-backend-ok69.onrender.com/"
 
 # =========================================================
 # LOGO PATH
