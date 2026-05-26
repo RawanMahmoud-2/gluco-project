@@ -24,21 +24,264 @@ st.set_page_config(
 st_autorefresh(interval=3000, key="refresh")
 
 # =========================================================
-# BACKEND API
+# BACKEND URL
 # =========================================================
 
-API_URL = "https://gluco-gaurd.onrender.com/data"
+BASE_URL = "https://gluco-gaurd.onrender.com"
 
 # =========================================================
 # FILES
 # =========================================================
 
 logo_path = "gluco_guard_logo.png"
-LOG_FILE = "daily_glucose_log.csv"
 
 # =========================================================
-# CREATE LOG FILE
+# CSS
 # =========================================================
+
+st.markdown("""
+<style>
+
+/* ===================================================== */
+/* MAIN BACKGROUND */
+/* ===================================================== */
+
+.stApp {
+    background: linear-gradient(
+        135deg,
+        #06141f 0%,
+        #0c2433 35%,
+        #112f44 70%,
+        #1a3f57 100%
+    );
+    color: white;
+}
+
+/* ===================================================== */
+/* HIDE HEADER */
+/* ===================================================== */
+
+header {
+    visibility: hidden;
+}
+
+/* ===================================================== */
+/* SIDEBAR */
+/* ===================================================== */
+
+section[data-testid="stSidebar"] {
+    display: none;
+}
+
+/* ===================================================== */
+/* INPUTS */
+/* ===================================================== */
+
+input, textarea {
+    background-color: white !important;
+    color: black !important;
+    border-radius: 12px !important;
+}
+
+/* ===================================================== */
+/* SELECTBOX */
+/* ===================================================== */
+
+div[data-baseweb="select"] {
+    background: white !important;
+    border-radius: 14px !important;
+}
+
+div[data-baseweb="select"] * {
+    color: black !important;
+}
+
+/* ===================================================== */
+/* METRIC CARD */
+/* ===================================================== */
+
+.metric-card {
+
+    background: rgba(255,255,255,0.08);
+
+    border-radius: 30px;
+
+    padding: 40px;
+
+    border: 1px solid rgba(255,255,255,0.12);
+
+    backdrop-filter: blur(16px);
+
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+
+    text-align: center;
+
+    margin-top: 10px;
+
+    margin-bottom: 30px;
+}
+
+/* ===================================================== */
+/* BIG GLUCOSE */
+/* ===================================================== */
+
+.big-glucose {
+
+    font-size: 82px;
+
+    font-weight: 900;
+
+    margin-bottom: 10px;
+}
+
+/* ===================================================== */
+/* STATUS TEXT */
+/* ===================================================== */
+
+.status-text {
+
+    font-size: 28px;
+
+    font-weight: 700;
+
+    color: #dff4ff;
+}
+
+/* ===================================================== */
+/* SECTION TITLE */
+/* ===================================================== */
+
+.section-title {
+
+    font-size: 28px;
+
+    font-weight: 700;
+
+    color: #eef7ff;
+
+    margin-bottom: 15px;
+
+    margin-top: 10px;
+}
+
+/* ===================================================== */
+/* METRIC CONTAINER */
+/* ===================================================== */
+
+[data-testid="metric-container"] {
+
+    background: rgba(255,255,255,0.06);
+
+    border: 1px solid rgba(255,255,255,0.10);
+
+    padding: 18px;
+
+    border-radius: 22px;
+
+    backdrop-filter: blur(12px);
+}
+
+/* ===================================================== */
+/* METRIC LABEL */
+/* ===================================================== */
+
+[data-testid="metric-container"] label {
+
+    color: #b9dfff !important;
+
+    font-weight: 700 !important;
+
+    font-size: 18px !important;
+}
+
+/* ===================================================== */
+/* METRIC VALUE */
+/* ===================================================== */
+
+[data-testid="metric-container"] div {
+
+    color: #dff4ff !important;
+
+    font-weight: 800 !important;
+}
+
+/* ===================================================== */
+/* DOWNLOAD BUTTON */
+/* ===================================================== */
+
+.stDownloadButton button {
+
+    background: linear-gradient(
+        90deg,
+        #3a8dff,
+        #6fb6ff
+    );
+
+    color: white;
+
+    border-radius: 16px;
+
+    padding: 12px 24px;
+
+    font-weight: 700;
+
+    border: none;
+}
+
+/* ===================================================== */
+/* CHART */
+/* ===================================================== */
+
+[data-testid="stLineChart"] {
+
+    background: rgba(255,255,255,0.05);
+
+    border-radius: 22px;
+
+    padding: 15px;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# HEADER
+# =========================================================
+
+col1, col2 = st.columns([1, 4])
+
+with col1:
+
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=220)
+
+with col2:
+
+    st.markdown("""
+    <h1 style="
+        font-size:72px;
+        font-weight:900;
+        margin-bottom:0;
+        color:#dff4ff;
+        line-height:1;
+    ">
+        Gluco-Guard
+    </h1>
+
+    <p style="
+        font-size:24px;
+        color:#b9dfff;
+        margin-top:10px;
+    ">
+        Stay aware, stay healthy, stay in Guard
+    </p>
+    """, unsafe_allow_html=True)
+
+# =========================================================
+# LOG FILE
+# =========================================================
+
+LOG_FILE = "daily_glucose_log.csv"
 
 if not os.path.exists(LOG_FILE):
 
@@ -55,6 +298,7 @@ model = None
 if os.path.exists("model.pkl"):
 
     with open("model.pkl", "rb") as f:
+
         model = pickle.load(f)
 
 # =========================================================
@@ -67,19 +311,27 @@ def predict_glucose(ppg_signal):
         return 0
 
     # ==========================================
-    # REAL MODEL
+    # MODEL PREDICTION
     # ==========================================
 
     if model is not None:
 
-        features = np.array(ppg_signal).reshape(1, -1)
+        MAX_LEN = 100
+
+        signal = ppg_signal[:MAX_LEN]
+
+        if len(signal) < MAX_LEN:
+
+            signal += [0] * (MAX_LEN - len(signal))
+
+        features = np.array(signal).reshape(1, -1)
 
         prediction = model.predict(features)[0]
 
         return float(prediction)
 
     # ==========================================
-    # DUMMY MODEL
+    # DUMMY PREDICTION
     # ==========================================
 
     glucose = 80 + (np.mean(ppg_signal) % 40)
@@ -87,7 +339,7 @@ def predict_glucose(ppg_signal):
     return round(float(glucose), 1)
 
 # =========================================================
-# GLUCOSE STATUS COLOR
+# GLUCOSE STATUS
 # =========================================================
 
 def get_status(glucose, fasting):
@@ -118,339 +370,6 @@ def get_status(glucose, fasting):
             return "HIGH", "#ff2e2e"
 
 # =========================================================
-# CSS
-# =========================================================
-
-st.markdown("""
-<style>
-
-/* ===================================================== */
-/* MAIN BACKGROUND */
-/* ===================================================== */
-
-.stApp {
-    background: linear-gradient(
-        135deg,
-        #06141f 0%,
-        #0c2433 35%,
-        #112f44 70%,
-        #1a3f57 100%
-    );
-    color: white;
-}
-
-/* ===================================================== */
-/* BACKGROUND LOGO */
-/* ===================================================== */
-
-.stApp::before {
-    content: "";
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 700px;
-    height: 700px;
-    transform: translate(-50%, -50%);
-    background-image: url("https://i.imgur.com/Qj8Z4bR.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-    opacity: 0.06;
-    filter: grayscale(100%) hue-rotate(180deg) brightness(1.2);
-    z-index: -1;
-}
-
-/* ===================================================== */
-/* HIDE HEADER */
-/* ===================================================== */
-
-header {
-    visibility: hidden;
-}
-
-/* ===================================================== */
-/* SIDEBAR */
-/* ===================================================== */
-
-section[data-testid="stSidebar"] {
-    display: none;
-}
-
-/* ===================================================== */
-/* TITLE */
-/* ===================================================== */
-
-.main-title {
-
-    font-size: 88px;
-
-    font-weight: 900;
-
-    text-align: left;
-
-    line-height: 1;
-
-    letter-spacing: 1px;
-
-    background: linear-gradient(
-        90deg,
-        #e7f7ff,
-        #8fd3ff,
-        #dff4ff
-    );
-
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-
-    text-shadow:
-    0px 0px 25px rgba(120,190,255,0.25);
-
-    margin-bottom: 10px;
-}
-
-/* ===================================================== */
-/* SUBTITLE */
-/* ===================================================== */
-
-.subtitle {
-
-    text-align: left;
-
-    font-size: 24px;
-
-    font-weight: 500;
-
-    color: #d7ecff;
-
-    letter-spacing: 0.5px;
-
-    margin-top: 8px;
-
-    opacity: 0.95;
-}
-
-/* ===================================================== */
-/* SECTION TITLE */
-/* ===================================================== */
-
-.section-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #eef7ff;
-    margin-bottom: 15px;
-}
-
-/* ===================================================== */
-/* LABELS */
-/* ===================================================== */
-
-label {
-    color: #eaf6ff !important;
-    font-weight: 600 !important;
-}
-
-/* ===================================================== */
-/* INPUTS */
-/* ===================================================== */
-
-input, textarea {
-    background-color: white !important;
-    color: black !important;
-    border-radius: 12px !important;
-}
-
-/* ===================================================== */
-/* SELECTBOX */
-/* ===================================================== */
-
-div[data-baseweb="select"] {
-    background: white !important;
-    border-radius: 14px !important;
-    border: 1px solid rgba(0,0,0,0.12) !important;
-    box-shadow: none !important;
-}
-
-div[data-baseweb="select"] > div {
-    background: white !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-div[data-baseweb="select"] input {
-    background: white !important;
-    color: black !important;
-    caret-color: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-div[data-baseweb="select"]:focus-within {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-div[data-baseweb="select"] * {
-    color: black !important;
-}
-
-div[data-baseweb="select"] div {
-    border: none !important;
-}
-
-/* ===================================================== */
-/* METRIC CARD */
-/* ===================================================== */
-
-.metric-card {
-
-    background:
-    rgba(255,255,255,0.08);
-
-    border-radius: 30px;
-
-    padding: 40px;
-
-    border:
-    1px solid rgba(255,255,255,0.12);
-
-    backdrop-filter: blur(16px);
-
-    box-shadow:
-    0 8px 32px rgba(0,0,0,0.35);
-
-    text-align: center;
-
-    margin-top: 10px;
-
-    margin-bottom: 30px;
-}
-
-/* ===================================================== */
-/* BIG GLUCOSE */
-/* ===================================================== */
-
-.big-glucose {
-
-    font-size: 82px;
-
-    font-weight: 900;
-
-    text-shadow:
-    0px 0px 25px rgba(255,255,255,0.18);
-
-    margin-bottom: 10px;
-}
-
-/* ===================================================== */
-/* STATUS TEXT */
-/* ===================================================== */
-
-.status-text {
-
-    font-size: 28px;
-
-    font-weight: 700;
-
-    color: #dff4ff;
-
-    letter-spacing: 1px;
-}
-
-/* ===================================================== */
-/* METRIC CONTAINERS */
-/* ===================================================== */
-
-[data-testid="metric-container"] {
-
-    background:
-    rgba(255,255,255,0.06);
-
-    border:
-    1px solid rgba(255,255,255,0.10);
-
-    padding: 18px;
-
-    border-radius: 22px;
-
-    backdrop-filter: blur(12px);
-}
-
-/* ===================================================== */
-/* BUTTON */
-/* ===================================================== */
-
-.stDownloadButton button {
-    background: linear-gradient(90deg, #3a8dff, #6fb6ff);
-    color: white;
-    border-radius: 16px;
-    padding: 12px 24px;
-    font-weight: 700;
-    border: none;
-}
-
-.stDownloadButton button:hover {
-    transform: scale(1.03);
-    box-shadow: 0px 0px 18px rgba(120,190,255,0.4);
-}
-
-/* ===================================================== */
-/* CHART */
-/* ===================================================== */
-
-[data-testid="stLineChart"] {
-    background: rgba(255,255,255,0.05);
-    border-radius: 22px;
-    padding: 15px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# =========================================================
-# HEADER
-# =========================================================
-
-# =========================================================
-# HEADER
-# =========================================================
-
-col1, col2 = st.columns([1.2, 4])
-
-with col1:
-
-    if os.path.exists(logo_path):
-
-        st.image(
-            logo_path,
-            width=260
-        )
-
-with col2:
-
-    st.markdown(
-        """
-        <div style="
-            display:flex;
-            flex-direction:column;
-            justify-content:center;
-            height:100%;
-            margin-top:25px;
-        ">
-
-            <div class="main-title">
-                Gluco-Guard
-            </div>
-
-            <div class="subtitle">
-                Stay aware, stay healthy, stay in Guard
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-# =========================================================
 # PATIENT INFO
 # =========================================================
 
@@ -465,7 +384,12 @@ with col1:
 
     name = st.text_input("Patient Name")
 
-    age = st.number_input("Age", 1, 120, 25)
+    age = st.number_input(
+        "Age",
+        1,
+        120,
+        25
+    )
 
 with col2:
 
@@ -496,12 +420,15 @@ with col3:
 fasting = meal_state == "Fasting"
 
 # =========================================================
-# FETCH BACKEND DATA
+# FETCH DATA FROM BACKEND
 # =========================================================
 
 try:
 
-    response = requests.get(API_URL, timeout=10)
+    response = requests.get(
+        f"{BASE_URL}/data",
+        timeout=10
+    )
 
     if response.status_code == 200:
 
@@ -517,11 +444,13 @@ try:
 
         ppg = []
 
-except:
+except Exception as e:
 
     backend_online = False
 
     ppg = []
+
+    st.error(f"Connection Error: {e}")
 
 # =========================================================
 # STATUS BAR
@@ -584,8 +513,6 @@ if len(ppg) > 0:
         unsafe_allow_html=True
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
     # =====================================================
     # LIVE PPG GRAPH
     # =====================================================
@@ -595,7 +522,9 @@ if len(ppg) > 0:
         unsafe_allow_html=True
     )
 
-    df = pd.DataFrame({"PPG": ppg})
+    df = pd.DataFrame({
+        "PPG": ppg
+    })
 
     st.line_chart(df)
 
@@ -603,26 +532,30 @@ if len(ppg) > 0:
     # SAVE LOG
     # =====================================================
 
+    log_df = pd.read_csv(LOG_FILE)
+
     new_row = pd.DataFrame({
         "Time": [datetime.now()],
         "Glucose": [glucose]
     })
 
-    new_row.to_csv(
-        LOG_FILE,
-        mode="a",
-        header=False,
-        index=False
-    )
+    if len(log_df) == 0 or abs(glucose - log_df["Glucose"].iloc[-1]) > 2:
+
+        new_row.to_csv(
+            LOG_FILE,
+            mode="a",
+            header=False,
+            index=False
+        )
 
     # =====================================================
-    # READ LOG
+    # READ LOG AGAIN
     # =====================================================
 
     log_df = pd.read_csv(LOG_FILE)
 
     # =====================================================
-    # DAILY ANALYTICS
+    # DAILY TREND
     # =====================================================
 
     st.markdown(
@@ -630,32 +563,36 @@ if len(ppg) > 0:
         unsafe_allow_html=True
     )
 
-    st.line_chart(
-        log_df.set_index("Time")["Glucose"]
-    )
+    if len(log_df) > 0:
 
-    avg_glucose = log_df["Glucose"].mean()
+        log_df["Time"] = pd.to_datetime(log_df["Time"])
 
-    max_glucose = log_df["Glucose"].max()
+        st.line_chart(
+            log_df.set_index("Time")["Glucose"]
+        )
 
-    min_glucose = log_df["Glucose"].min()
+        avg_glucose = log_df["Glucose"].mean()
 
-    c1, c2, c3 = st.columns(3)
+        max_glucose = log_df["Glucose"].max()
 
-    c1.metric(
-        "Average",
-        f"{avg_glucose:.1f} mg/dL"
-    )
+        min_glucose = log_df["Glucose"].min()
 
-    c2.metric(
-        "Highest",
-        f"{max_glucose:.1f} mg/dL"
-    )
+        c1, c2, c3 = st.columns(3)
 
-    c3.metric(
-        "Lowest",
-        f"{min_glucose:.1f} mg/dL"
-    )
+        c1.metric(
+            "Average",
+            f"{avg_glucose:.1f} mg/dL"
+        )
+
+        c2.metric(
+            "Highest",
+            f"{max_glucose:.1f} mg/dL"
+        )
+
+        c3.metric(
+            "Lowest",
+            f"{min_glucose:.1f} mg/dL"
+        )
 
     # =====================================================
     # DOWNLOAD REPORT
