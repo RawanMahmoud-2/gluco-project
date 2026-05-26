@@ -75,7 +75,7 @@ st.markdown("""
         #0c2433 35%,
         #112f44 70%,
         #1a3f57 100%
-        transition: none !important;
+      
     );
 }
 
