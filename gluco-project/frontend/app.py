@@ -75,8 +75,29 @@ st.markdown("""
         #0c2433 35%,
         #112f44 70%,
         #1a3f57 100%
-      
     );
+    color: white;
+}
+
+/* ===================================================== */
+/* BACKGROUND LOGO */
+/* ===================================================== */
+
+.stApp::before {
+    content: "";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 700px;
+    height: 700px;
+    transform: translate(-50%, -50%);
+    background-image: url("https://i.imgur.com/Qj8Z4bR.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.06;
+    filter: grayscale(100%) hue-rotate(180deg) brightness(1.2);
+    z-index: -1;
 }
 
 /* ===================================================== */
@@ -88,6 +109,147 @@ header {
 }
 
 /* ===================================================== */
+/* TITLE */
+/* ===================================================== */
+
+.main-title {
+    font-size: 72px;
+    font-weight: 800;
+    text-align: center;
+    background: linear-gradient(90deg, #9ed8ff, #5db8ff, #d8ecff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+/* ===================================================== */
+/* SUBTITLE */
+/* ===================================================== */
+
+.subtitle {
+    text-align: center;
+    font-size: 20px;
+    color: #d7ecff;
+    margin-bottom: 35px;
+}
+
+/* ===================================================== */
+/* SECTION TITLE */
+/* ===================================================== */
+
+.section-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #eef7ff;
+    margin-bottom: 15px;
+}
+
+/* ===================================================== */
+/* GLASS CARD */
+/* ===================================================== */
+
+.card {
+    background: rgba(255,255,255,0.08);
+    border-radius: 28px;
+    padding: 28px;
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+
+/* ===================================================== */
+/* LABELS */
+/* ===================================================== */
+
+label {
+    color: #eaf6ff !important;
+    font-weight: 600 !important;
+}
+
+/* ===================================================== */
+/* INPUTS */
+/* ===================================================== */
+
+input, textarea {
+    background-color: white !important;
+    color: black !important;
+    border-radius: 12px !important;
+}
+
+/* ===================================================== */
+/* CLEAN WHITE SELECTBOX FIX */
+/* ===================================================== */
+/* main container */
+div[data-baseweb="select"] {
+    background: white !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(0,0,0,0.12) !important;
+    box-shadow: none !important;
+}
+
+/* inner control */
+div[data-baseweb="select"] > div {
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* input field (this is where the "white line" comes from) */
+div[data-baseweb="select"] input {
+    background: white !important;
+    color: black !important;
+    caret-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* remove focus glow (IMPORTANT) */
+div[data-baseweb="select"]:focus-within {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* selected text */
+div[data-baseweb="select"] * {
+    color: black !important;
+}
+
+/* remove weird pseudo borders */
+div[data-baseweb="select"] div {
+    border: none !important;
+}
+
+/* ===================================================== */
+/* BIG NUMBER */
+/* ===================================================== */
+
+.big-number {
+    font-size: 50px;
+    font-weight: 800;
+    color: #8bd0ff;
+    text-shadow: 0px 0px 20px rgba(139,208,255,0.45);
+}
+
+/* ===================================================== */
+/* BUTTON */
+/* ===================================================== */
+
+.stDownloadButton button {
+    background: linear-gradient(90deg, #3a8dff, #6fb6ff);
+    color: white;
+    border-radius: 16px;
+    padding: 12px 24px;
+    font-weight: 700;
+    border: none;
+}
+
+.stDownloadButton button:hover {
+    transform: scale(1.03);
+    box-shadow: 0px 0px 18px rgba(120,190,255,0.4);
+}
+/* ===================================================== */
 /* SIDEBAR */
 /* ===================================================== */
 
@@ -96,70 +258,7 @@ section[data-testid="stSidebar"] {
 }
 
 /* ===================================================== */
-/* ALL TEXT */
-/* ===================================================== */
-
-html,
-body,
-p,
-span,
-div,
-label,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    color: white !important;
-}
-
-/* ===================================================== */
-/* INPUTS */
-/* ===================================================== */
-
-input {
-    background-color: white !important;
-    color: black !important;
-    border-radius: 12px !important;
-}
-
-/* ===================================================== */
-/* TEXT INPUT */
-/* ===================================================== */
-
-.stTextInput input {
-    color: black !important;
-}
-
-/* ===================================================== */
-/* NUMBER INPUT */
-/* ===================================================== */
-
-[data-testid="stNumberInput"] input {
-    color: black !important;
-    background-color: white !important;
-}
-
-/* ===================================================== */
-/* SELECTBOX */
-/* ===================================================== */
-
-div[data-baseweb="select"] {
-    background-color: white !important;
-    border-radius: 12px !important;
-}
-
-/* ===================================================== */
-/* SELECTBOX TEXT */
-/* ===================================================== */
-
-div[data-baseweb="select"] * {
-    color: black !important;
-}
-
-/* ===================================================== */
-/* METRICS */
+/* METRIC CONTAINER */
 /* ===================================================== */
 
 [data-testid="metric-container"] {
@@ -173,12 +272,20 @@ div[data-baseweb="select"] * {
     border: 1px solid rgba(255,255,255,0.08);
 }
 
+/* ===================================================== */
+/* METRIC LABEL */
+/* ===================================================== */
+
 [data-testid="metric-container"] label {
 
     color: #8fd3ff !important;
 
     font-weight: bold !important;
 }
+
+/* ===================================================== */
+/* METRIC VALUE */
+/* ===================================================== */
 
 [data-testid="metric-container"] div {
 
@@ -188,54 +295,29 @@ div[data-baseweb="select"] * {
 }
 
 /* ===================================================== */
+/* NUMBER INPUT FIX */
+/* ===================================================== */
+
+[data-testid="stNumberInput"] input {
+    color: black !important;
+    background-color: white !important;
+}
+
+/* ===================================================== */
+/* TEXT INPUT FIX */
+/* ===================================================== */
+
+.stTextInput input {
+    color: black !important;
+}
+/* ===================================================== */
 /* CHART */
 /* ===================================================== */
 
 [data-testid="stLineChart"] {
-
-    background: rgba(255,255,255,0.04);
-
-    border-radius: 20px;
-
-    padding: 10px;
-}
-
-/* ===================================================== */
-/* BUTTON */
-/* ===================================================== */
-
-.stDownloadButton button {
-
-    background: linear-gradient(
-        90deg,
-        #3a8dff,
-        #6fb6ff
-    );
-
-    color: white !important;
-
-    border-radius: 14px;
-
-    border: none;
-
-    font-weight: bold;
-}
-
-/* ===================================================== */
-/* SECTION TITLE */
-/* ===================================================== */
-
-.section-title {
-
-    font-size: 28px;
-
-    font-weight: 700;
-
-    color: white !important;
-
-    margin-bottom: 15px;
-
-    margin-top: 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 22px;
+    padding: 15px;
 }
 
 </style>
