@@ -34,6 +34,28 @@ BASE_URL = "https://gluco-gaurd.onrender.com"
 # =========================================================
 
 logo_path = "gluco_guard_logo.png"
+LOG_FILE = "daily_glucose_log.csv"
+
+# =========================================================
+# CREATE LOG FILE
+# =========================================================
+
+if not os.path.exists(LOG_FILE):
+
+    pd.DataFrame(
+        columns=["Time", "Glucose"]
+    ).to_csv(LOG_FILE, index=False)
+
+# =========================================================
+# LOAD MODEL
+# =========================================================
+
+model = None
+
+if os.path.exists("model.pkl"):
+
+    with open("model.pkl", "rb") as f:
+        model = pickle.load(f)
 
 # =========================================================
 # CSS
@@ -54,7 +76,6 @@ st.markdown("""
         #112f44 70%,
         #1a3f57 100%
     );
-    color: white;
 }
 
 /* ===================================================== */
@@ -74,13 +95,40 @@ section[data-testid="stSidebar"] {
 }
 
 /* ===================================================== */
+/* ALL TEXT */
+/* ===================================================== */
+
+html,
+body,
+p,
+span,
+div,
+label,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: white !important;
+}
+
+/* ===================================================== */
 /* INPUTS */
 /* ===================================================== */
 
-input, textarea {
-    background-color: white !important;
-    color: black !important;
+input {
+    background-color: rgba(255,255,255,0.08) !important;
+    color: white !important;
     border-radius: 12px !important;
+}
+
+/* ===================================================== */
+/* NUMBER INPUT */
+/* ===================================================== */
+
+[data-testid="stNumberInput"] input {
+    color: white !important;
 }
 
 /* ===================================================== */
@@ -88,63 +136,75 @@ input, textarea {
 /* ===================================================== */
 
 div[data-baseweb="select"] {
-    background: white !important;
-    border-radius: 14px !important;
+    background-color: rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important;
 }
 
 div[data-baseweb="select"] * {
-    color: black !important;
+    color: white !important;
 }
 
 /* ===================================================== */
-/* METRIC CARD */
+/* METRICS */
 /* ===================================================== */
 
-.metric-card {
+[data-testid="metric-container"] {
 
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
 
-    border-radius: 30px;
+    border-radius: 20px;
 
-    padding: 40px;
+    padding: 15px;
 
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.08);
+}
 
-    backdrop-filter: blur(16px);
+[data-testid="metric-container"] label {
 
-    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    color: #8fd3ff !important;
 
-    text-align: center;
+    font-weight: bold !important;
+}
 
-    margin-top: 10px;
+[data-testid="metric-container"] div {
 
-    margin-bottom: 30px;
+    color: white !important;
+
+    font-weight: bold !important;
 }
 
 /* ===================================================== */
-/* BIG GLUCOSE */
+/* CHART */
 /* ===================================================== */
 
-.big-glucose {
+[data-testid="stLineChart"] {
 
-    font-size: 82px;
+    background: rgba(255,255,255,0.04);
 
-    font-weight: 900;
+    border-radius: 20px;
 
-    margin-bottom: 10px;
+    padding: 10px;
 }
 
 /* ===================================================== */
-/* STATUS TEXT */
+/* BUTTON */
 /* ===================================================== */
 
-.status-text {
+.stDownloadButton button {
 
-    font-size: 28px;
+    background: linear-gradient(
+        90deg,
+        #3a8dff,
+        #6fb6ff
+    );
 
-    font-weight: 700;
+    color: white !important;
 
-    color: #dff4ff;
+    border-radius: 14px;
+
+    border: none;
+
+    font-weight: bold;
 }
 
 /* ===================================================== */
@@ -157,88 +217,11 @@ div[data-baseweb="select"] * {
 
     font-weight: 700;
 
-    color: #eef7ff;
+    color: white !important;
 
     margin-bottom: 15px;
 
     margin-top: 10px;
-}
-
-/* ===================================================== */
-/* METRIC CONTAINER */
-/* ===================================================== */
-
-[data-testid="metric-container"] {
-
-    background: rgba(255,255,255,0.06);
-
-    border: 1px solid rgba(255,255,255,0.10);
-
-    padding: 18px;
-
-    border-radius: 22px;
-
-    backdrop-filter: blur(12px);
-}
-
-/* ===================================================== */
-/* METRIC LABEL */
-/* ===================================================== */
-
-[data-testid="metric-container"] label {
-
-    color: #b9dfff !important;
-
-    font-weight: 700 !important;
-
-    font-size: 18px !important;
-}
-
-/* ===================================================== */
-/* METRIC VALUE */
-/* ===================================================== */
-
-[data-testid="metric-container"] div {
-
-    color: #dff4ff !important;
-
-    font-weight: 800 !important;
-}
-
-/* ===================================================== */
-/* DOWNLOAD BUTTON */
-/* ===================================================== */
-
-.stDownloadButton button {
-
-    background: linear-gradient(
-        90deg,
-        #3a8dff,
-        #6fb6ff
-    );
-
-    color: white;
-
-    border-radius: 16px;
-
-    padding: 12px 24px;
-
-    font-weight: 700;
-
-    border: none;
-}
-
-/* ===================================================== */
-/* CHART */
-/* ===================================================== */
-
-[data-testid="stLineChart"] {
-
-    background: rgba(255,255,255,0.05);
-
-    border-radius: 22px;
-
-    padding: 15px;
 }
 
 </style>
@@ -262,7 +245,7 @@ with col2:
         font-size:72px;
         font-weight:900;
         margin-bottom:0;
-        color:#dff4ff;
+        color:#8fd3ff !important;
         line-height:1;
     ">
         Gluco-Guard
@@ -270,36 +253,12 @@ with col2:
 
     <p style="
         font-size:24px;
-        color:#b9dfff;
+        color:#b9dfff !important;
         margin-top:10px;
     ">
         Stay aware, stay healthy, stay in Guard
     </p>
     """, unsafe_allow_html=True)
-
-# =========================================================
-# LOG FILE
-# =========================================================
-
-LOG_FILE = "daily_glucose_log.csv"
-
-if not os.path.exists(LOG_FILE):
-
-    pd.DataFrame(
-        columns=["Time", "Glucose"]
-    ).to_csv(LOG_FILE, index=False)
-
-# =========================================================
-# LOAD ML MODEL
-# =========================================================
-
-model = None
-
-if os.path.exists("model.pkl"):
-
-    with open("model.pkl", "rb") as f:
-
-        model = pickle.load(f)
 
 # =========================================================
 # PREDICTION FUNCTION
@@ -310,10 +269,6 @@ def predict_glucose(ppg_signal):
     if len(ppg_signal) == 0:
         return 0
 
-    # ==========================================
-    # MODEL PREDICTION
-    # ==========================================
-
     if model is not None:
 
         MAX_LEN = 100
@@ -321,7 +276,6 @@ def predict_glucose(ppg_signal):
         signal = ppg_signal[:MAX_LEN]
 
         if len(signal) < MAX_LEN:
-
             signal += [0] * (MAX_LEN - len(signal))
 
         features = np.array(signal).reshape(1, -1)
@@ -330,16 +284,12 @@ def predict_glucose(ppg_signal):
 
         return float(prediction)
 
-    # ==========================================
-    # DUMMY PREDICTION
-    # ==========================================
-
     glucose = 80 + (np.mean(ppg_signal) % 40)
 
     return round(float(glucose), 1)
 
 # =========================================================
-# GLUCOSE STATUS
+# STATUS FUNCTION
 # =========================================================
 
 def get_status(glucose, fasting):
@@ -420,7 +370,7 @@ with col3:
 fasting = meal_state == "Fasting"
 
 # =========================================================
-# FETCH DATA FROM BACKEND
+# FETCH BACKEND DATA
 # =========================================================
 
 try:
@@ -487,28 +437,34 @@ if len(ppg) > 0:
     status, color = get_status(glucose, fasting)
 
     # =====================================================
-    # GLUCOSE CARD
+    # GLUCOSE DISPLAY
     # =====================================================
+
+    st.markdown("## Current Glucose Level")
 
     st.markdown(
         f"""
-        <div class="metric-card">
+        <h1 style='
+            text-align:center;
+            font-size:90px;
+            color:{color};
+            margin-bottom:0;
+        '>
+            {glucose:.1f}
+        </h1>
+        """,
+        unsafe_allow_html=True
+    )
 
-            <div
-            class="big-glucose"
-            style="color:{color};">
-
-                {glucose:.1f} mg/dL
-
-            </div>
-
-            <div class="status-text">
-
-                {status}
-
-            </div>
-
-        </div>
+    st.markdown(
+        f"""
+        <h3 style='
+            text-align:center;
+            color:white;
+            margin-top:0;
+        '>
+            mg/dL — {status}
+        </h3>
         """,
         unsafe_allow_html=True
     )
@@ -549,7 +505,7 @@ if len(ppg) > 0:
         )
 
     # =====================================================
-    # READ LOG AGAIN
+    # READ LOG
     # =====================================================
 
     log_df = pd.read_csv(LOG_FILE)
