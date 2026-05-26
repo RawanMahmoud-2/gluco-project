@@ -109,6 +109,14 @@ header {
 }
 
 /* ===================================================== */
+/* SIDEBAR */
+/* ===================================================== */
+
+section[data-testid="stSidebar"] {
+    display: none;
+}
+
+/* ===================================================== */
 /* TITLE */
 /* ===================================================== */
 
@@ -130,7 +138,7 @@ header {
 .subtitle {
     text-align: center;
     font-size: 20px;
-    color: #d7ecff;
+    color: #d7ecff !important;
     margin-bottom: 35px;
 }
 
@@ -171,16 +179,36 @@ label {
 /* INPUTS */
 /* ===================================================== */
 
-input, textarea {
+input,
+textarea {
     background-color: white !important;
     color: black !important;
     border-radius: 12px !important;
 }
 
 /* ===================================================== */
+/* TEXT INPUT FIX */
+/* ===================================================== */
+
+.stTextInput input {
+    color: black !important;
+}
+
+/* ===================================================== */
+/* NUMBER INPUT FIX */
+/* ===================================================== */
+
+[data-testid="stNumberInput"] input {
+    color: black !important;
+    background-color: white !important;
+}
+
+/* ===================================================== */
 /* CLEAN WHITE SELECTBOX FIX */
 /* ===================================================== */
+
 /* main container */
+
 div[data-baseweb="select"] {
     background: white !important;
     border-radius: 14px !important;
@@ -189,13 +217,15 @@ div[data-baseweb="select"] {
 }
 
 /* inner control */
+
 div[data-baseweb="select"] > div {
     background: white !important;
     border: none !important;
     box-shadow: none !important;
 }
 
-/* input field (this is where the "white line" comes from) */
+/* input field */
+
 div[data-baseweb="select"] input {
     background: white !important;
     color: black !important;
@@ -205,56 +235,34 @@ div[data-baseweb="select"] input {
     box-shadow: none !important;
 }
 
-/* remove focus glow (IMPORTANT) */
+/* remove focus glow */
+
 div[data-baseweb="select"]:focus-within {
     outline: none !important;
     box-shadow: none !important;
 }
 
 /* selected text */
+
 div[data-baseweb="select"] * {
     color: black !important;
 }
 
-/* remove weird pseudo borders */
+/* remove weird borders */
+
 div[data-baseweb="select"] div {
     border: none !important;
 }
 
 /* ===================================================== */
-/* BIG NUMBER */
+/* BIG GLUCOSE NUMBER */
 /* ===================================================== */
 
 .big-number {
     font-size: 50px;
     font-weight: 800;
-    color: #8bd0ff;
+    color: #8bd0ff !important;
     text-shadow: 0px 0px 20px rgba(139,208,255,0.45);
-}
-
-/* ===================================================== */
-/* BUTTON */
-/* ===================================================== */
-
-.stDownloadButton button {
-    background: linear-gradient(90deg, #3a8dff, #6fb6ff);
-    color: white;
-    border-radius: 16px;
-    padding: 12px 24px;
-    font-weight: 700;
-    border: none;
-}
-
-.stDownloadButton button:hover {
-    transform: scale(1.03);
-    box-shadow: 0px 0px 18px rgba(120,190,255,0.4);
-}
-/* ===================================================== */
-/* SIDEBAR */
-/* ===================================================== */
-
-section[data-testid="stSidebar"] {
-    display: none;
 }
 
 /* ===================================================== */
@@ -281,35 +289,48 @@ section[data-testid="stSidebar"] {
     color: #8fd3ff !important;
 
     font-weight: bold !important;
+
+    font-size: 16px !important;
 }
 
 /* ===================================================== */
-/* METRIC VALUE */
+/* METRIC NUMBER */
 /* ===================================================== */
 
-[data-testid="metric-container"] div {
+[data-testid="metric-container"] [data-testid="stMetricValue"] {
 
     color: white !important;
 
-    font-weight: bold !important;
+    font-weight: 800 !important;
 }
 
 /* ===================================================== */
-/* NUMBER INPUT FIX */
+/* METRIC NUMBER TEXT */
 /* ===================================================== */
 
-[data-testid="stNumberInput"] input {
-    color: black !important;
-    background-color: white !important;
+[data-testid="metric-container"] [data-testid="stMetricValue"] * {
+
+    color: white !important;
 }
 
 /* ===================================================== */
-/* TEXT INPUT FIX */
+/* BUTTON */
 /* ===================================================== */
 
-.stTextInput input {
-    color: black !important;
+.stDownloadButton button {
+    background: linear-gradient(90deg, #3a8dff, #6fb6ff);
+    color: white !important;
+    border-radius: 16px;
+    padding: 12px 24px;
+    font-weight: 700;
+    border: none;
 }
+
+.stDownloadButton button:hover {
+    transform: scale(1.03);
+    box-shadow: 0px 0px 18px rgba(120,190,255,0.4);
+}
+
 /* ===================================================== */
 /* CHART */
 /* ===================================================== */
@@ -553,18 +574,18 @@ if len(ppg) > 0:
     )
 
     st.markdown(
-        f"""
-        <h3 style='
-            text-align:center;
-            color:white;
-            margin-top:0;
-        '>
-            mg/dL — {status}
-        </h3>
-        """,
-        unsafe_allow_html=True
-    )
-
+    f"""
+    <h3 style='
+        text-align:center;
+        color:{color};
+        margin-top:0;
+        font-weight:700;
+    '>
+        mg/dL — {status}
+    </h3>
+    """,
+    unsafe_allow_html=True
+)
     # =====================================================
     # LIVE PPG GRAPH
     # =====================================================
