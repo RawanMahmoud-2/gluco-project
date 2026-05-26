@@ -118,9 +118,17 @@ h6 {
 /* ===================================================== */
 
 input {
-    background-color: rgba(255,255,255,0.08) !important;
-    color: white !important;
+    background-color: white !important;
+    color: black !important;
     border-radius: 12px !important;
+}
+
+/* ===================================================== */
+/* TEXT INPUT */
+/* ===================================================== */
+
+.stTextInput input {
+    color: black !important;
 }
 
 /* ===================================================== */
@@ -128,7 +136,8 @@ input {
 /* ===================================================== */
 
 [data-testid="stNumberInput"] input {
-    color: white !important;
+    color: black !important;
+    background-color: white !important;
 }
 
 /* ===================================================== */
@@ -136,12 +145,16 @@ input {
 /* ===================================================== */
 
 div[data-baseweb="select"] {
-    background-color: rgba(255,255,255,0.08) !important;
+    background-color: white !important;
     border-radius: 12px !important;
 }
 
+/* ===================================================== */
+/* SELECTBOX TEXT */
+/* ===================================================== */
+
 div[data-baseweb="select"] * {
-    color: white !important;
+    color: black !important;
 }
 
 /* ===================================================== */
