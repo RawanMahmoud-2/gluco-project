@@ -11,7 +11,7 @@ def glucose_predict(ppg):
 
     # 2. Load checkpoint
     checkpoint = torch.load(
-        "cnn_gru_model_full_enhanced_600Epochs.pth",
+        "frontend/cnn_gru_model_full_enhanced_600Epochs.pth",
         map_location=device
     )
 
