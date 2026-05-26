@@ -27,7 +27,7 @@ st_autorefresh(interval=3000, key="refresh")
 # BACKEND API
 # =========================================================
 
-API_URL = "https://gluco-backend-ok69.onrender.com/data"
+API_URL = "https://gluco-gaurd.onrender.com/data"
 
 # =========================================================
 # FILES
