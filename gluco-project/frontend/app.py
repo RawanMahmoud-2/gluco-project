@@ -2,10 +2,10 @@ import streamlit as st
 import requests
 import pandas as pd
 import numpy as np
-import pickle
 import os
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+from gluco_predict import glucose_predict
 
 # =========================================================
 # PAGE CONFIG
@@ -46,16 +46,6 @@ if not os.path.exists(LOG_FILE):
         columns=["Time", "Glucose"]
     ).to_csv(LOG_FILE, index=False)
 
-# =========================================================
-# LOAD MODEL
-# =========================================================
-
-model = None
-
-if os.path.exists("model.pkl"):
-
-    with open("model.pkl", "rb") as f:
-        model = pickle.load(f)
 
 # =========================================================
 # CSS
@@ -378,34 +368,6 @@ with col2:
     """, unsafe_allow_html=True)
 
 # =========================================================
-# PREDICTION FUNCTION
-# =========================================================
-
-def predict_glucose(ppg_signal):
-
-    if len(ppg_signal) == 0:
-        return 0
-
-    if model is not None:
-
-        MAX_LEN = 100
-
-        signal = ppg_signal[:MAX_LEN]
-
-        if len(signal) < MAX_LEN:
-            signal += [0] * (MAX_LEN - len(signal))
-
-        features = np.array(signal).reshape(1, -1)
-
-        prediction = model.predict(features)[0]
-
-        return float(prediction)
-
-    glucose = 80 + (np.mean(ppg_signal) % 40)
-
-    return round(float(glucose), 1)
-
-# =========================================================
 # STATUS FUNCTION
 # =========================================================
 
@@ -519,6 +481,7 @@ except Exception as e:
 
     st.error(f"Connection Error: {e}")
 
+
 # =========================================================
 # STATUS BAR
 # =========================================================
@@ -549,7 +512,7 @@ with col3:
 
 if len(ppg) > 0:
 
-    glucose = predict_glucose(ppg)
+    glucose = glucose_predict(ppg)
 
     status, color = get_status(glucose, fasting)
 
