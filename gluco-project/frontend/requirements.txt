@@ -4,3 +4,7 @@ pandas
 numpy
 streamlit-autorefresh
 scikit-learn
+torch
+scipy.signal
+pywt
+sklearn.preprocessing
