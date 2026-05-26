@@ -21,7 +21,7 @@ st.set_page_config(
 # AUTO REFRESH
 # =========================================================
 
-st_autorefresh(interval=3000, key="refresh")
+st_autorefresh(interval=15000, key="refresh")
 
 # =========================================================
 # BACKEND URL
@@ -75,6 +75,7 @@ st.markdown("""
         #0c2433 35%,
         #112f44 70%,
         #1a3f57 100%
+        transition: none !important;
     );
 }
 
