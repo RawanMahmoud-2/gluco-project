@@ -13,6 +13,7 @@ def glucose_predict(ppg):
     checkpoint = torch.load(
         "cnn_gru_model_full_enhanced_600Epochs.pth",
         map_location=device
+         weights_only=False
     )
 
     # 3. Rebuild model and load weights
