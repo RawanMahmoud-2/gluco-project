@@ -6,7 +6,20 @@ import os
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from gluco_predict import glucose_predict
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    Image
+)
 
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import letter
+
+import matplotlib.pyplot as plt
 # =========================================================
 # PAGE CONFIG
 # =========================================================
@@ -634,18 +647,251 @@ if len(ppg) > 0:
             f"{min_glucose:.1f} mg/dL"
         )
 
-    # =====================================================
-    # DOWNLOAD REPORT
+       # =====================================================
+    # PDF REPORT
     # =====================================================
 
-    csv = log_df.to_csv(index=False)
+    def classify_reading(glucose, fasting_state):
 
-    st.download_button(
-        label="⬇ Download Daily Report",
-        data=csv,
-        file_name="daily_glucose_report.csv",
-        mime="text/csv"
+        if fasting_state:
+
+            if glucose < 80:
+                return "LOW"
+
+            elif glucose <= 130:
+                return "NORMAL"
+
+            elif glucose <= 180:
+                return "HIGH"
+
+            else:
+                return "DANGEROUS"
+
+        else:
+
+            if glucose < 80:
+                return "LOW"
+
+            elif glucose <= 180:
+                return "NORMAL"
+
+            else:
+                return "HIGH"
+
+    # -----------------------------------------------------
+    # CREATE REPORT DATA
+    # -----------------------------------------------------
+
+    report_df = log_df.copy()
+
+    report_df["Meal State"] = meal_state
+
+    report_df["Status"] = report_df["Glucose"].apply(
+        lambda x: classify_reading(x, fasting)
     )
+
+    # -----------------------------------------------------
+    # CREATE GRAPH IMAGE
+    # -----------------------------------------------------
+
+    graph_file = "daily_glucose_graph.png"
+
+    plt.figure(figsize=(8, 4))
+
+    plt.plot(
+        report_df["Time"],
+        report_df["Glucose"],
+        linewidth=2
+    )
+
+    plt.xlabel("Time")
+
+    plt.ylabel("Glucose (mg/dL)")
+
+    plt.title("Daily Glucose Trend")
+
+    plt.xticks(rotation=20)
+
+    plt.tight_layout()
+
+    plt.savefig(graph_file)
+
+    plt.close()
+
+    # -----------------------------------------------------
+    # PDF FILE
+    # -----------------------------------------------------
+
+    pdf_file = "daily_glucose_report.pdf"
+
+    doc = SimpleDocTemplate(
+        pdf_file,
+        pagesize=letter
+    )
+
+    styles = getSampleStyleSheet()
+
+    elements = []
+
+    # -----------------------------------------------------
+    # TITLE
+    # -----------------------------------------------------
+
+    title = Paragraph(
+        "<b>Gluco-Guard Daily Glucose Report</b>",
+        styles['Title']
+    )
+
+    elements.append(title)
+
+    elements.append(Spacer(1, 20))
+
+    # -----------------------------------------------------
+    # PATIENT INFORMATION
+    # -----------------------------------------------------
+
+    patient_info = f"""
+    <b>Patient Name:</b> {name}<br/>
+    <b>Age:</b> {age}<br/>
+    <b>Gender:</b> {gender}<br/>
+    <b>Diabetes Status:</b> {diabetes_type}<br/>
+    <b>Generated On:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    """
+
+    elements.append(
+        Paragraph(
+            patient_info,
+            styles['BodyText']
+        )
+    )
+
+    elements.append(Spacer(1, 20))
+
+    # -----------------------------------------------------
+    # SUMMARY
+    # -----------------------------------------------------
+
+    summary_text = f"""
+    <b>Highest Glucose:</b> {max_glucose:.1f} mg/dL<br/>
+    <b>Lowest Glucose:</b> {min_glucose:.1f} mg/dL<br/>
+    <b>Average Glucose:</b> {avg_glucose:.1f} mg/dL
+    """
+
+    elements.append(
+        Paragraph(
+            summary_text,
+            styles['BodyText']
+        )
+    )
+
+    elements.append(Spacer(1, 20))
+
+    # -----------------------------------------------------
+    # GRAPH
+    # -----------------------------------------------------
+
+    elements.append(
+        Paragraph(
+            "<b>Daily Glucose Trend</b>",
+            styles['Heading2']
+        )
+    )
+
+    elements.append(Spacer(1, 10))
+
+    elements.append(
+        Image(
+            graph_file,
+            width=450,
+            height=220
+        )
+    )
+
+    elements.append(Spacer(1, 20))
+
+    # -----------------------------------------------------
+    # TABLE TITLE
+    # -----------------------------------------------------
+
+    elements.append(
+        Paragraph(
+            "<b>Daily Readings Table</b>",
+            styles['Heading2']
+        )
+    )
+
+    elements.append(Spacer(1, 10))
+
+    # -----------------------------------------------------
+    # FORMAT TABLE DATA
+    # -----------------------------------------------------
+
+    table_data = [
+        [
+            "Time",
+            "Glucose",
+            "Status",
+            "Meal State"
+        ]
+    ]
+
+    for _, row in report_df.iterrows():
+
+        table_data.append([
+            str(row["Time"])[:19],
+            f'{row["Glucose"]:.1f} mg/dL',
+            row["Status"],
+            row["Meal State"]
+        ])
+
+    # -----------------------------------------------------
+    # CREATE TABLE
+    # -----------------------------------------------------
+
+    table = Table(table_data)
+
+    table.setStyle(
+        TableStyle([
+
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1a3f57")),
+
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER')
+
+        ])
+    )
+
+    elements.append(table)
+
+    # -----------------------------------------------------
+    # BUILD PDF
+    # -----------------------------------------------------
+
+    doc.build(elements)
+
+    # -----------------------------------------------------
+    # DOWNLOAD BUTTON
+    # -----------------------------------------------------
+
+    with open(pdf_file, "rb") as pdf:
+
+        st.download_button(
+            label="⬇ Download Daily PDF Report",
+            data=pdf,
+            file_name="daily_glucose_report.pdf",
+            mime="application/pdf"
+        )
 
 else:
 
