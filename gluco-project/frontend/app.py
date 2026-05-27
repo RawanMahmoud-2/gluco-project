@@ -370,7 +370,86 @@ with col2:
     Stay aware. Stay healthy. Stay in Guard.
    </p>
     """, unsafe_allow_html=True)
+# =========================================================
+# STATUS FUNCTION
+# =========================================================
 
+def get_status(glucose, fasting):
+
+    if fasting:
+
+        if glucose < 80:
+            return "LOW", "#ff5c5c"
+
+        elif glucose <= 130:
+            return "NORMAL", "#4dff88"
+
+        elif glucose <= 180:
+            return "HIGH", "#ffd24d"
+
+        else:
+            return "DANGEROUS", "#ff2e2e"
+
+    else:
+
+        if glucose < 80:
+            return "LOW", "#ff5c5c"
+
+        elif glucose <= 180:
+            return "NORMAL", "#4dff88"
+
+        else:
+            return "HIGH", "#ff2e2e"
+
+# =========================================================
+# PATIENT INFO
+# =========================================================
+
+st.markdown(
+    '<div class="section-title">Patient Information</div>',
+    unsafe_allow_html=True
+)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+
+    name = st.text_input("Patient Name")
+
+    age = st.number_input(
+        "Age",
+        1,
+        120,
+        25
+    )
+
+with col2:
+
+    gender = st.selectbox(
+        "Gender",
+        ["Female", "Male"]
+    )
+
+    diabetes_type = st.selectbox(
+        "Diabetes Status",
+        [
+            "Non-Diabetic",
+            "Type 1 Diabetes",
+            "Type 2 Diabetes"
+        ]
+    )
+
+with col3:
+
+    meal_state = st.selectbox(
+        "Meal Status",
+        [
+            "Fasting",
+            "Ate in last 1–2 hours"
+        ]
+    )
+
+fasting = meal_state == "Fasting"
 # =========================================================
 # FETCH BACKEND DATA
 # =========================================================
