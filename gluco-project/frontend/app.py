@@ -501,9 +501,6 @@ if len(ppg) > 0:
 
     glucose = glucose_predict(ppg)
 
-    # FIX: define missing variable instead of hiding it
-    fasting = False
-
     # SAFE status handling
     try:
         status, color = get_status(glucose, fasting)
@@ -568,48 +565,63 @@ if len(ppg) > 0:
     # =====================================================
     # SMS ALERT SYSTEM (FULLY FIXED)
     # =====================================================
-
-    
-   
-
-    st.markdown("## Alert Settings")
+        st.markdown("## Alert Settings")
     user_phone = st.text_input("Enter phone number (e.g. +2010XXXXXXX)")
-
+    
     HIGH_THRESHOLD = 180
     LOW_THRESHOLD = 70
-
-    # FIX: create client only once
+    
+    # =====================================================
+    # Twilio client (initialize once per session)
+    # =====================================================
     if "twilio_client" not in st.session_state:
-        st.session_state.twilio_client = Client("YOUR_SID", "YOUR_AUTH")
-
-    # FIX: track last alert time
+        st.session_state.twilio_client = Client(
+            os.getenv("TWILIO_SID", ""),
+            os.getenv("TWILIO_AUTH", "")
+        )
+    
+    # =====================================================
+    # Track last SMS time
+    # =====================================================
     if "last_sms_time" not in st.session_state:
         st.session_state.last_sms_time = 0
-
+    
+    # =====================================================
+    # SMS function
+    # =====================================================
     def send_sms(msg, to):
         try:
+            if not to:
+                return
+    
             st.session_state.twilio_client.messages.create(
                 body=msg,
-                from_="+YOUR_NUMBER",
+                from_=os.getenv("TWILIO_NUMBER", ""),
                 to=to
             )
+    
         except Exception as e:
             st.error(f"SMS failed: {e}")
-
-    current_time = time.time()
-
-    # FIX: only trigger when glucose exists and valid
-    if user_phone and glucose is not None:
-
-        if current_time - st.session_state.last_sms_time > 300:
-
-            if glucose > HIGH_THRESHOLD:
-                send_sms(f"High glucose: {glucose:.1f} mg/dL", user_phone)
+    
+    # =====================================================
+    # ALERT LOGIC (SAFE + NON-SPAM)
+    # =====================================================
+    if "glucose" in locals() and glucose is not None and user_phone:
+    
+        current_time = time.time()
+    
+        alert_msg = None
+    
+        if glucose > HIGH_THRESHOLD:
+            alert_msg = f"⚠️ High glucose detected: {glucose:.1f} mg/dL"
+    
+        elif glucose < LOW_THRESHOLD:
+            alert_msg = f"⚠️ Low glucose detected: {glucose:.1f} mg/dL"
+    
+        # send only if alert exists AND cooldown passed
+        if alert_msg:
+            if current_time - st.session_state.last_sms_time > 300:
+                send_sms(alert_msg, user_phone)
                 st.session_state.last_sms_time = current_time
-
-            elif glucose < LOW_THRESHOLD:
-                send_sms(f"Low glucose: {glucose:.1f} mg/dL", user_phone)
-                st.session_state.last_sms_time = current_time
-
 else:
     st.warning("Waiting for ESP32 PPG signal...")
