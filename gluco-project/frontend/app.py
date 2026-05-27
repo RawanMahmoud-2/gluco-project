@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import os
 from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
 from gluco_predict import glucose_predict
 
 # =========================================================
@@ -18,10 +17,14 @@ st.set_page_config(
 )
 
 # =========================================================
-# AUTO REFRESH
+# SMART DATA TRACKING
 # =========================================================
 
-st_autorefresh(interval=15000, key="refresh")
+if "last_ppg" not in st.session_state:
+    st.session_state.last_ppg = []
+
+if "last_update" not in st.session_state:
+    st.session_state.last_update = None
 
 # =========================================================
 # BACKEND URL
@@ -469,9 +472,19 @@ try:
 
         ppg = data.get("ppg", [])
         ppg = [
-    x for x in ppg
-    if isinstance(x, (int, float))
-                ]
+        x for x in ppg
+        if isinstance(x, (int, float))
+        ]
+        # ============================================
+        # REFRESH ONLY WHEN NEW DATA ARRIVES
+        # ============================================
+            
+        if ppg != st.session_state.last_ppg:
+            
+            st.session_state.last_ppg = ppg
+            st.session_state.last_update = datetime.now()
+            
+            st.rerun()
 
     else:
 
@@ -504,15 +517,14 @@ with col1:
 
 with col2:
 
-         log_df = pd.read_csv(LOG_FILE)
+    log_df = pd.read_csv(LOG_FILE)
     measurement_count = len(log_df)
     
     st.info(f"Measurements: {measurement_count}")
 
 with col3:
 
-    st.info(
-        f"Updated: {datetime.now().strftime('%H:%M:%S')}"
+    st.info(f"Updated: {st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.last_update else 'No Data'}"
     )
 
 # =========================================================
