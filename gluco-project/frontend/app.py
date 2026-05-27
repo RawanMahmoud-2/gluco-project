@@ -466,6 +466,10 @@ try:
         data = response.json()
 
         ppg = data.get("ppg", [])
+        ppg = [
+    x for x in ppg
+    if isinstance(x, (int, float))
+                ]
 
     else:
 
