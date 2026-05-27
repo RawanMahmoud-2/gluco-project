@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from gluco_model import CNN_GRU_Model
 from gluco_preprocessing import preprocess_ppg
 
@@ -25,7 +26,8 @@ def glucose_predict(ppg):
     bg_scaler = checkpoint["bg_scaler"]
 
     # Shape for model input
-    ppg_signal = ppg[ppg['ppg'] > 0]
+    ppg_signal = np.array(ppg)
+    ppg_signal = ppg_signal[ppg_signal > 0]
     sig_norm = preprocess_ppg(ppg_signal)
     new_ppg_tensor = torch.FloatTensor(sig_norm).reshape(1, -1, 1).to(device)
 
@@ -36,4 +38,4 @@ def glucose_predict(ppg):
         # Inverse transform using the BG scaler saved in dataset
         predicted_bg_n = bg_scaler.inverse_transform(predicted_bg_n)
 
-    return predicted_bg_n
+   return float(predicted_bg_n[0][0])
