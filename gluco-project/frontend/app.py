@@ -493,135 +493,368 @@ with col2:
 with col3:
     st.info(f"Updated: {datetime.now().strftime('%H:%M:%S')}")
 
-# =====================================================
+# =========================================================
 # MAIN DASHBOARD
-# =====================================================
+# =========================================================
 
 if len(ppg) > 0:
 
     glucose = glucose_predict(ppg)
 
-    # SAFE status handling
-    try:
-        status, color = get_status(glucose, fasting)
-    except:
-        status, color = "Normal", "#8bd0ff"
+    status, color = get_status(glucose, fasting)
 
     st.markdown("## Current Glucose Level")
 
     st.markdown(f"""
-        <h1 style='text-align:center;font-size:90px;color:{color};margin-bottom:0;'>
-            {glucose:.1f}
-        </h1>
+    <h1 style='
+    text-align:center;
+    font-size:90px;
+    color:{color};
+    margin-bottom:0;
+    '>
+    {glucose:.1f}
+    </h1>
     """, unsafe_allow_html=True)
 
     st.markdown(f"""
-        <h3 style='text-align:center;color:{color};margin-top:0;font-weight:700;'>
-            mg/dL — {status}
-        </h3>
+    <h3 style='
+    text-align:center;
+    color:{color};
+    margin-top:0;
+    font-weight:700;
+    '>
+    mg/dL — {status}
+    </h3>
     """, unsafe_allow_html=True)
 
     # =====================================================
     # SAVE LOG
     # =====================================================
 
-    log_df = pd.read_csv(LOG_FILE)
-
     new_row = pd.DataFrame({
         "Time": [datetime.now()],
         "Glucose": [glucose]
     })
 
-    if len(log_df) == 0 or abs(glucose - log_df["Glucose"].iloc[-1]) > 2:
-        new_row.to_csv(LOG_FILE, mode="a", header=False, index=False)
+    if len(log_df) == 0:
+
+        save = True
+
+    else:
+
+        last_time = pd.to_datetime(
+            log_df["Time"].iloc[-1]
+        )
+
+        minutes_passed = (
+            datetime.now() - last_time
+        ).total_seconds() / 60
+
+        save = minutes_passed >= 5
+
+    if save:
+
+        new_row.to_csv(
+            LOG_FILE,
+            mode="a",
+            header=False,
+            index=False
+        )
+
+    # reload log
 
     log_df = pd.read_csv(LOG_FILE)
+
+    log_df["Time"] = pd.to_datetime(log_df["Time"])
 
     # =====================================================
     # DAILY TREND
     # =====================================================
 
-    st.markdown('<div class="section-title">Daily Glucose Trend</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">Daily Glucose Trend</div>',
+        unsafe_allow_html=True
+    )
+
+    st.line_chart(
+        log_df.set_index("Time")["Glucose"]
+    )
+
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric(
+        "Average",
+        f"{log_df['Glucose'].mean():.1f} mg/dL"
+    )
+
+    c2.metric(
+        "Highest",
+        f"{log_df['Glucose'].max():.1f} mg/dL"
+    )
+
+    c3.metric(
+        "Lowest",
+        f"{log_df['Glucose'].min():.1f} mg/dL"
+    )
+
+    # =====================================================
+    # LIVE PPG SIGNAL
+    # =====================================================
+
+    st.markdown(
+        '<div class="section-title">Live PPG Signal</div>',
+        unsafe_allow_html=True
+    )
+
+    st.line_chart(
+        pd.DataFrame({"PPG": ppg})
+    )
+
+    # =====================================================
+    # SMS ALERT SYSTEM
+    # =====================================================
+
+    st.markdown("## Alert Settings")
+
+    user_phone = st.text_input(
+        "Enter phone number (e.g. +2010XXXXXXX)"
+    )
+
+    HIGH_THRESHOLD = 180
+    LOW_THRESHOLD = 70
+
+    if "twilio_client" not in st.session_state:
+
+        st.session_state.twilio_client = Client(
+            os.getenv("TWILIO_SID"),
+            os.getenv("TWILIO_AUTH")
+        )
+
+    if "last_sms_time" not in st.session_state:
+
+        st.session_state.last_sms_time = 0
+
+    def send_sms(msg, to):
+
+        try:
+
+            st.session_state.twilio_client.messages.create(
+                body=msg,
+                from_=os.getenv("TWILIO_PHONE"),
+                to=to
+            )
+
+        except Exception as e:
+
+            st.error(f"SMS failed: {e}")
+
+    current_time = time.time()
+
+    if user_phone:
+
+        if current_time - st.session_state.last_sms_time > 300:
+
+            if glucose > HIGH_THRESHOLD:
+
+                send_sms(
+                    f"High glucose alert: {glucose:.1f} mg/dL",
+                    user_phone
+                )
+
+                st.session_state.last_sms_time = current_time
+
+            elif glucose < LOW_THRESHOLD:
+
+                send_sms(
+                    f"Low glucose alert: {glucose:.1f} mg/dL",
+                    user_phone
+                )
+
+                st.session_state.last_sms_time = current_time
+
+    # =====================================================
+    # CSV DOWNLOAD
+    # =====================================================
+
+    csv = log_df.to_csv(index=False)
+
+    st.download_button(
+        label="⬇️ Download CSV Report",
+        data=csv,
+        file_name="daily_glucose_report.csv",
+        mime="text/csv"
+    )
+
+    # =====================================================
+    # PDF REPORT
+    # =====================================================
 
     if len(log_df) > 0:
 
-        log_df["Time"] = pd.to_datetime(log_df["Time"])
+        pdf_file = "daily_glucose_report.pdf"
 
-        st.line_chart(log_df.set_index("Time")["Glucose"])
+        graph_file = "glucose_graph.png"
 
-        c1, c2, c3 = st.columns(3)
+        # =================================================
+        # CREATE GRAPH
+        # =================================================
 
-        c1.metric("Average", f"{log_df['Glucose'].mean():.1f} mg/dL")
-        c2.metric("Highest", f"{log_df['Glucose'].max():.1f} mg/dL")
-        c3.metric("Lowest", f"{log_df['Glucose'].min():.1f} mg/dL")
+        plt.figure(figsize=(8, 4))
 
-    # =====================================================
-    # LIVE PPG
-    # =====================================================
-
-    st.markdown('<div class="section-title">Live PPG Signal</div>', unsafe_allow_html=True)
-    st.line_chart(pd.DataFrame({"PPG": ppg}))
-
-    # =====================================================
-    # SMS ALERT SYSTEM (FULLY FIXED)
-    # =====================================================
-        st.markdown("## Alert Settings")
-    user_phone = st.text_input("Enter phone number (e.g. +2010XXXXXXX)")
-    
-    HIGH_THRESHOLD = 180
-    LOW_THRESHOLD = 70
-    
-    # =====================================================
-    # Twilio client (initialize once per session)
-    # =====================================================
-    if "twilio_client" not in st.session_state:
-        st.session_state.twilio_client = Client(
-            os.getenv("TWILIO_SID", ""),
-            os.getenv("TWILIO_AUTH", "")
+        plt.plot(
+            log_df["Time"],
+            log_df["Glucose"],
+            linewidth=2
         )
-    
-    # =====================================================
-    # Track last SMS time
-    # =====================================================
-    if "last_sms_time" not in st.session_state:
-        st.session_state.last_sms_time = 0
-    
-    # =====================================================
-    # SMS function
-    # =====================================================
-    def send_sms(msg, to):
-        try:
-            if not to:
-                return
-    
-            st.session_state.twilio_client.messages.create(
-                body=msg,
-                from_=os.getenv("TWILIO_NUMBER", ""),
-                to=to
+
+        plt.xlabel("Time")
+        plt.ylabel("Glucose (mg/dL)")
+        plt.title("Daily Glucose Trend")
+
+        plt.xticks(rotation=25)
+
+        plt.tight_layout()
+
+        plt.savefig(graph_file)
+
+        plt.close()
+
+        # =================================================
+        # CREATE PDF
+        # =================================================
+
+        doc = SimpleDocTemplate(
+            pdf_file,
+            pagesize=letter
+        )
+
+        styles = getSampleStyleSheet()
+
+        elements = []
+
+        # =================================================
+        # TITLE
+        # =================================================
+
+        title = Paragraph(
+            "<b>Gluco-Guard Daily Report</b>",
+            styles['Title']
+        )
+
+        elements.append(title)
+
+        elements.append(Spacer(1, 20))
+
+        # =================================================
+        # PATIENT INFO
+        # =================================================
+
+        patient_info = f"""
+        <b>Patient Name:</b> {name}<br/>
+        <b>Age:</b> {age}<br/>
+        <b>Gender:</b> {gender}<br/>
+        <b>Diabetes Status:</b> {diabetes_type}<br/>
+        <b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        """
+
+        elements.append(
+            Paragraph(
+                patient_info,
+                styles['BodyText']
             )
-    
-        except Exception as e:
-            st.error(f"SMS failed: {e}")
-    
-    # =====================================================
-    # ALERT LOGIC (SAFE + NON-SPAM)
-    # =====================================================
-    if "glucose" in locals() and glucose is not None and user_phone:
-    
-        current_time = time.time()
-    
-        alert_msg = None
-    
-        if glucose > HIGH_THRESHOLD:
-            alert_msg = f"⚠️ High glucose detected: {glucose:.1f} mg/dL"
-    
-        elif glucose < LOW_THRESHOLD:
-            alert_msg = f"⚠️ Low glucose detected: {glucose:.1f} mg/dL"
-    
-        # send only if alert exists AND cooldown passed
-        if alert_msg:
-            if current_time - st.session_state.last_sms_time > 300:
-                send_sms(alert_msg, user_phone)
-                st.session_state.last_sms_time = current_time
+        )
+
+        elements.append(Spacer(1, 20))
+
+        # =================================================
+        # GRAPH
+        # =================================================
+
+        elements.append(
+            Paragraph(
+                "<b>Daily Glucose Trend</b>",
+                styles['Heading2']
+            )
+        )
+
+        elements.append(Spacer(1, 10))
+
+        img = Image(
+            graph_file,
+            width=450,
+            height=220
+        )
+
+        elements.append(img)
+
+        elements.append(Spacer(1, 20))
+
+        # =================================================
+        # TABLE
+        # =================================================
+
+        elements.append(
+            Paragraph(
+                "<b>Glucose Readings Table</b>",
+                styles['Heading2']
+            )
+        )
+
+        elements.append(Spacer(1, 10))
+
+        table_df = log_df.copy()
+
+        table_df["Time"] = table_df["Time"].astype(str)
+
+        table_data = [
+            table_df.columns.tolist()
+        ] + table_df.values.tolist()
+
+        table = Table(table_data)
+
+        table.setStyle(TableStyle([
+
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3a8dff")),
+
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+
+            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
+
+        ]))
+
+        elements.append(table)
+
+        # =================================================
+        # BUILD PDF
+        # =================================================
+
+        doc.build(elements)
+
+        # =================================================
+        # PDF DOWNLOAD
+        # =================================================
+
+        with open(pdf_file, "rb") as f:
+
+            st.download_button(
+                label="⬇️ Download PDF Report",
+                data=f,
+                file_name="daily_glucose_report.pdf",
+                mime="application/pdf"
+            )
+
+        # =================================================
+        # CLEANUP
+        # =================================================
+
+        if os.path.exists(graph_file):
+
+            os.remove(graph_file)
+
 else:
+
     st.warning("Waiting for ESP32 PPG signal...")
