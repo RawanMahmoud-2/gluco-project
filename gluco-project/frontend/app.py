@@ -1,4 +1,3 @@
-
 import streamlit as st
 import requests
 import pandas as pd
@@ -288,13 +287,22 @@ div[data-baseweb="select"] div {
 /* METRIC NUMBER */
 /* ===================================================== */
 
-[data-testid="metric-container"] [data-testid="stMetricValue"],
-[data-testid="metric-container"] [data-testid="stMetricValue"] * {
+[data-testid="metric-container"] [data-testid="stMetricValue"] {
 
-    color: #ffffff !important;
+    color: white !important;
 
     font-weight: 800 !important;
 }
+
+/* ===================================================== */
+/* METRIC NUMBER TEXT */
+/* ===================================================== */
+
+[data-testid="metric-container"] [data-testid="stMetricValue"] * {
+
+    color: white !important;
+}
+
 /* ===================================================== */
 /* BUTTON */
 /* ===================================================== */
@@ -335,30 +343,30 @@ col1, col2 = st.columns([1, 4])
 with col1:
 
     if os.path.exists(logo_path):
-        st.image(logo_path, width=400)
+        st.image(logo_path, width=220)
 
 with col2:
 
     st.markdown("""
-   <h1 style="
-    font-size:72px;
-    font-weight:900;
-    margin-bottom:0;
-    line-height:1;
-   ">
-    <span style="color:#c7d0d9;">Gluco</span><span style="color:#5db8ff;">Guard</span>
-   </h1>
+    <h1 style="
+        font-size:72px;
+        font-weight:900;
+        margin-bottom:0;
+        color:#8fd3ff !important;
+        line-height:1;
+    ">
+        Gluco-Guard
+    </h1>
 
-   <p style="
-    font-size:24px;
-    color:#dff2ff !important;
-    margin-top:10px;
-    font-weight:500;
-   ">
-    Stay aware. Stay healthy. Stay in Guard.
-   </p>
-    
+    <p style="
+        font-size:24px;
+        color:#b9dfff !important;
+        margin-top:10px;
+    ">
+        Stay aware, stay healthy, stay in Guard
+    </p>
     """, unsafe_allow_html=True)
+
 # =========================================================
 # STATUS FUNCTION
 # =========================================================
@@ -545,7 +553,20 @@ if len(ppg) > 0:
     """,
     unsafe_allow_html=True
 )
-    
+    # =====================================================
+    # LIVE PPG GRAPH
+    # =====================================================
+
+    st.markdown(
+        '<div class="section-title">Live PPG Signal</div>',
+        unsafe_allow_html=True
+    )
+
+    df = pd.DataFrame({
+        "PPG": ppg
+    })
+
+    st.line_chart(df)
 
     # =====================================================
     # SAVE LOG
@@ -626,10 +647,6 @@ if len(ppg) > 0:
         mime="text/csv"
     )
 
-
 else:
 
     st.warning("Waiting for ESP32 PPG signal...")
-
- 
-
