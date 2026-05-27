@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from scipy.signal import butter, filtfilt
 import pywt
 from sklearn.preprocessing import  MinMaxScaler
