@@ -37,5 +37,4 @@ def glucose_predict(ppg):
 
         # Inverse transform using the BG scaler saved in dataset
         predicted_bg_n = bg_scaler.inverse_transform(predicted_bg_n)
-
-   return float(predicted_bg_n[0][0])
+        return float(predicted_bg_n[0][0])
