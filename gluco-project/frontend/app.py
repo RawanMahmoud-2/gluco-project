@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import numpy as np
 import os
+from twilio.rest import Client
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from gluco_predict import glucose_predict
@@ -567,8 +568,8 @@ if len(ppg) > 0:
     # SMS ALERT SYSTEM (FULLY FIXED)
     # =====================================================
 
-    import time
-    from twilio.rest import Client
+    
+   
 
     st.markdown("## Alert Settings")
     user_phone = st.text_input("Enter phone number (e.g. +2010XXXXXXX)")
