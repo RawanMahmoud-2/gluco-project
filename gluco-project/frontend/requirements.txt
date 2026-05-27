@@ -8,7 +8,5 @@ torch
 scipy
 PyWavelets
 scikit-learn
-reportlab
-matplotlib
-twilio
+
 
