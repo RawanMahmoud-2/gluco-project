@@ -688,49 +688,48 @@ if len(ppg) > 0:
     # =====================================================
     # PDF REPORT
     # =====================================================
-
-    if len(log_df) > 0:
-
-        pdf_file = "daily_glucose_report.pdf"
-
-        graph_file = "glucose_graph.png"
-
-        # =================================================
-        # CREATE GRAPH
-        # =================================================
-
-        plt.figure(figsize=(8, 4))
-
-        plt.plot(
-            log_df["Time"],
-            log_df["Glucose"],
-            linewidth=2
-        )
-
-        plt.xlabel("Time")
-        plt.ylabel("Glucose (mg/dL)")
-        plt.title("Daily Glucose Trend")
-
-        plt.xticks(rotation=25)
-
-        plt.tight_layout()
-
-        plt.savefig(graph_file)
-
-        plt.close()
-
-        # =================================================
-        # CREATE PDF
-        # =================================================
-
-        doc = SimpleDocTemplate(
-            pdf_file,
-            pagesize=letter
-        )
-
-        styles = getSampleStyleSheet()
-
-        elements = []
+    if st.button("Generate PDF Report"):
+    
+        if len(log_df) > 0:
+    
+            import io
+    
+            # =========================
+            # GRAPH (IN MEMORY)
+            # =========================
+            img_buffer = io.BytesIO()
+    
+            plt.figure(figsize=(8, 4))
+            plt.plot(log_df["Time"], log_df["Glucose"], linewidth=2)
+            plt.xticks(rotation=25)
+            plt.tight_layout()
+    
+            plt.savefig(img_buffer, format="png")
+            plt.close("all")
+    
+            img_buffer.seek(0)
+    
+            # =========================
+            # PDF (IN MEMORY)
+            # =========================
+            pdf_buffer = io.BytesIO()
+    
+            doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+            styles = getSampleStyleSheet()
+            elements = []
+    
+            # (add your Paragraphs, Tables, etc.)
+    
+            doc.build(elements)
+    
+            pdf_buffer.seek(0)
+    
+            st.download_button(
+                "⬇️ Download PDF Report",
+                data=pdf_buffer,
+                file_name="glucose_report.pdf",
+                mime="application/pdf"
+            )
 
         # =================================================
         # TITLE
