@@ -644,6 +644,5 @@ else:
 
     st.warning("Waiting for ESP32 PPG signal...")
 
-    """, unsafe_allow_html=True)
-
+ 
 
