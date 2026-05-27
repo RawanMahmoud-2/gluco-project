@@ -3,11 +3,18 @@ import requests
 import pandas as pd
 import numpy as np
 import os
-import time 
+import time
+import io
+
 from twilio.rest import Client
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from gluco_predict import glucose_predict
+
+# =========================================================
+# REPORTLAB IMPORTS
+# =========================================================
+
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
@@ -21,7 +28,12 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 
+# =========================================================
+# MATPLOTLIB
+# =========================================================
+
 import matplotlib.pyplot as plt
+
 # =========================================================
 # PAGE CONFIG
 # =========================================================
@@ -61,6 +73,11 @@ if not os.path.exists(LOG_FILE):
         columns=["Time", "Glucose"]
     ).to_csv(LOG_FILE, index=False)
 
+# =========================================================
+# LOAD LOG FILE
+# =========================================================
+
+log_df = pd.read_csv(LOG_FILE)
 
 # =========================================================
 # CSS
@@ -212,8 +229,6 @@ textarea {
 /* CLEAN WHITE SELECTBOX FIX */
 /* ===================================================== */
 
-/* main container */
-
 div[data-baseweb="select"] {
     background: white !important;
     border-radius: 14px !important;
@@ -221,15 +236,11 @@ div[data-baseweb="select"] {
     box-shadow: none !important;
 }
 
-/* inner control */
-
 div[data-baseweb="select"] > div {
     background: white !important;
     border: none !important;
     box-shadow: none !important;
 }
-
-/* input field */
 
 div[data-baseweb="select"] input {
     background: white !important;
@@ -240,20 +251,14 @@ div[data-baseweb="select"] input {
     box-shadow: none !important;
 }
 
-/* remove focus glow */
-
 div[data-baseweb="select"]:focus-within {
     outline: none !important;
     box-shadow: none !important;
 }
 
-/* selected text */
-
 div[data-baseweb="select"] * {
     color: black !important;
 }
-
-/* remove weird borders */
 
 div[data-baseweb="select"] div {
     border: none !important;
@@ -323,6 +328,16 @@ div[data-baseweb="select"] div {
     border: none;
 }
 
+.stButton button {
+    background: linear-gradient(90deg, #3a8dff, #6fb6ff);
+    color: white !important;
+    border-radius: 16px;
+    padding: 12px 24px;
+    font-weight: 700;
+    border: none;
+}
+
+.stButton button:hover,
 .stDownloadButton button:hover {
     transform: scale(1.03);
     box-shadow: 0px 0px 18px rgba(120,190,255,0.4);
@@ -341,7 +356,6 @@ div[data-baseweb="select"] div {
 </style>
 """, unsafe_allow_html=True)
 
-
 # =========================================================
 # HEADER
 # =========================================================
@@ -349,29 +363,33 @@ div[data-baseweb="select"] div {
 col1, col2 = st.columns([1, 4])
 
 with col1:
+
     if os.path.exists(logo_path):
         st.image(logo_path, width=400)
 
 with col2:
+
     st.markdown("""
-   <h1 style="
+    <h1 style="
     font-size:72px;
     font-weight:900;
     margin-bottom:0;
     line-height:1;
-   ">
-    <span style="color:#c7d0d9;">Gluco</span><span style="color:#5db8ff;">Guard</span>
-   </h1>
+    ">
+    <span style="color:#c7d0d9;">Gluco</span>
+    <span style="color:#5db8ff;">Guard</span>
+    </h1>
 
-   <p style="
+    <p style="
     font-size:24px;
     color:#dff2ff !important;
     margin-top:10px;
     font-weight:500;
-   ">
+    ">
     Stay aware. Stay healthy. Stay in Guard.
-   </p>
+    </p>
     """, unsafe_allow_html=True)
+
 # =========================================================
 # STATUS FUNCTION
 # =========================================================
@@ -452,46 +470,73 @@ with col3:
     )
 
 fasting = meal_state == "Fasting"
+
 # =========================================================
 # FETCH BACKEND DATA
 # =========================================================
 
 try:
-    response = requests.get(f"{BASE_URL}/data", timeout=10)
+
+    response = requests.get(
+        f"{BASE_URL}/data",
+        timeout=5
+    )
 
     if response.status_code == 200:
+
         backend_online = True
+
         data = response.json()
-        ppg = data.get("ppg", [])
-        ppg = [x for x in ppg if isinstance(x, (int, float))]
+
+        raw_ppg = data.get("ppg", [])
+
+        clean_ppg = []
+
+        for x in raw_ppg:
+
+            try:
+                clean_ppg.append(float(x))
+            except:
+                pass
+
+        ppg = clean_ppg
+
     else:
+
         backend_online = False
         ppg = []
 
 except Exception as e:
+
     backend_online = False
     ppg = []
+
     st.error(f"Connection Error: {e}")
 
 # =========================================================
-# STATUS BAR (FIXED)
+# STATUS BAR
 # =========================================================
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
+
     if backend_online:
         st.success("Backend Connected")
     else:
         st.error("Backend Offline")
 
 with col2:
-    log_df = pd.read_csv(LOG_FILE)
+
     measurement_count = len(log_df)
+
     st.info(f"Measurements: {measurement_count}")
 
 with col3:
-    st.info(f"Updated: {datetime.now().strftime('%H:%M:%S')}")
+
+    st.info(
+        f"Updated: {datetime.now().strftime('%H:%M:%S')}"
+    )
 
 # =========================================================
 # MAIN DASHBOARD
@@ -502,6 +547,10 @@ if len(ppg) > 0:
     glucose = glucose_predict(ppg)
 
     status, color = get_status(glucose, fasting)
+
+    # =====================================================
+    # GLUCOSE DISPLAY
+    # =====================================================
 
     st.markdown("## Current Glucose Level")
 
@@ -561,11 +610,15 @@ if len(ppg) > 0:
             index=False
         )
 
-    # reload log
+    # =====================================================
+    # RELOAD LOG
+    # =====================================================
 
     log_df = pd.read_csv(LOG_FILE)
 
-    log_df["Time"] = pd.to_datetime(log_df["Time"])
+    log_df["Time"] = pd.to_datetime(
+        log_df["Time"]
+    )
 
     # =====================================================
     # DAILY TREND
@@ -672,187 +725,226 @@ if len(ppg) > 0:
 
                 st.session_state.last_sms_time = current_time
 
-    # =====================================================
-    # CSV DOWNLOAD
-    # =====================================================
-
-    csv = log_df.to_csv(index=False)
-
-    st.download_button(
-        label="⬇️ Download CSV Report",
-        data=csv,
-        file_name="daily_glucose_report.csv",
-        mime="text/csv"
-    )
-
+  
     # =====================================================
     # PDF REPORT
     # =====================================================
+
     if st.button("Generate PDF Report"):
-    
+
         if len(log_df) > 0:
-    
-            import io
-    
-            # =========================
-            # GRAPH (IN MEMORY)
-            # =========================
+
+            # ==============================================
+            # CREATE GRAPH IN MEMORY
+            # ==============================================
+
             img_buffer = io.BytesIO()
-    
+
             plt.figure(figsize=(8, 4))
-            plt.plot(log_df["Time"], log_df["Glucose"], linewidth=2)
-            plt.xticks(rotation=25)
-            plt.tight_layout()
-    
-            plt.savefig(img_buffer, format="png")
-            plt.close("all")
-    
-            img_buffer.seek(0)
-    
-            # =========================
-            # PDF (IN MEMORY)
-            # =========================
-            pdf_buffer = io.BytesIO()
-    
-            doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
-            styles = getSampleStyleSheet()
-            elements = []
-    
-            # (add your Paragraphs, Tables, etc.)
-    
-            doc.build(elements)
-    
-            pdf_buffer.seek(0)
-    
-            st.download_button(
-                "⬇️ Download PDF Report",
-                data=pdf_buffer,
-                file_name="glucose_report.pdf",
-                mime="application/pdf"
+
+            plt.plot(
+                log_df["Time"],
+                log_df["Glucose"],
+                linewidth=2
             )
 
-        # =================================================
-        # TITLE
-        # =================================================
+            plt.xlabel("Time")
+            plt.ylabel("Glucose (mg/dL)")
+            plt.title("Daily Glucose Trend")
 
-        title = Paragraph(
-            "<b>Gluco-Guard Daily Report</b>",
-            styles['Title']
-        )
+            plt.xticks(rotation=25)
 
-        elements.append(title)
+            plt.tight_layout()
 
-        elements.append(Spacer(1, 20))
+            plt.savefig(
+                img_buffer,
+                format="png"
+            )
 
-        # =================================================
-        # PATIENT INFO
-        # =================================================
+            plt.close("all")
 
-        patient_info = f"""
-        <b>Patient Name:</b> {name}<br/>
-        <b>Age:</b> {age}<br/>
-        <b>Gender:</b> {gender}<br/>
-        <b>Diabetes Status:</b> {diabetes_type}<br/>
-        <b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        """
+            img_buffer.seek(0)
 
-        elements.append(
-            Paragraph(
+            # ==============================================
+            # CREATE PDF BUFFER
+            # ==============================================
+
+            pdf_buffer = io.BytesIO()
+
+            # ==============================================
+            # PDF DOCUMENT
+            # ==============================================
+
+            doc = SimpleDocTemplate(
+                pdf_buffer,
+                pagesize=letter
+            )
+
+            styles = getSampleStyleSheet()
+
+            elements = []
+
+            # ==============================================
+            # TITLE
+            # ==============================================
+
+            title = Paragraph(
+                "<b>Gluco-Guard Daily Report</b>",
+                styles['Title']
+            )
+
+            elements.append(title)
+
+            elements.append(Spacer(1, 20))
+
+            # ==============================================
+            # PATIENT INFORMATION
+            # ==============================================
+
+            patient_info = f"""
+            <b>Patient Name:</b> {name}<br/>
+            <b>Age:</b> {age}<br/>
+            <b>Gender:</b> {gender}<br/>
+            <b>Diabetes Status:</b> {diabetes_type}<br/>
+            <b>Meal Status:</b> {meal_state}<br/>
+            <b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+            """
+
+            info_paragraph = Paragraph(
                 patient_info,
                 styles['BodyText']
             )
-        )
 
-        elements.append(Spacer(1, 20))
+            elements.append(info_paragraph)
 
-        # =================================================
-        # GRAPH
-        # =================================================
+            elements.append(Spacer(1, 20))
 
-        elements.append(
-            Paragraph(
-                "<b>Daily Glucose Trend</b>",
-                styles['Heading2']
+            # ==============================================
+            # GRAPH TITLE
+            # ==============================================
+
+            elements.append(
+                Paragraph(
+                    "<b>Daily Glucose Trend</b>",
+                    styles['Heading2']
+                )
             )
-        )
 
-        elements.append(Spacer(1, 10))
+            elements.append(Spacer(1, 10))
 
-        img = Image(
-            graph_file,
-            width=450,
-            height=220
-        )
+            # ==============================================
+            # GRAPH IMAGE
+            # ==============================================
 
-        elements.append(img)
-
-        elements.append(Spacer(1, 20))
-
-        # =================================================
-        # TABLE
-        # =================================================
-
-        elements.append(
-            Paragraph(
-                "<b>Glucose Readings Table</b>",
-                styles['Heading2']
+            img = Image(
+                img_buffer,
+                width=450,
+                height=220
             )
-        )
 
-        elements.append(Spacer(1, 10))
+            elements.append(img)
 
-        table_df = log_df.copy()
+            elements.append(Spacer(1, 20))
 
-        table_df["Time"] = table_df["Time"].astype(str)
+            # ==============================================
+            # TABLE TITLE
+            # ==============================================
 
-        table_data = [
-            table_df.columns.tolist()
-        ] + table_df.values.tolist()
+            elements.append(
+                Paragraph(
+                    "<b>Glucose Readings Table</b>",
+                    styles['Heading2']
+                )
+            )
 
-        table = Table(table_data)
+            elements.append(Spacer(1, 10))
 
-        table.setStyle(TableStyle([
+            # ==============================================
+            # TABLE DATA
+            # ==============================================
 
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3a8dff")),
+            table_df = log_df.copy()
 
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            table_df["Time"] = table_df["Time"].astype(str)
 
-            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+            table_data = [
+                table_df.columns.tolist()
+            ] + table_df.values.tolist()
 
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            # ==============================================
+            # CREATE TABLE
+            # ==============================================
 
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
+            table = Table(table_data)
 
-        ]))
+            table.setStyle(TableStyle([
 
-        elements.append(table)
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.HexColor("#3a8dff")
+                ),
 
-        # =================================================
-        # BUILD PDF
-        # =================================================
+                (
+                    "TEXTCOLOR",
+                    (0, 0),
+                    (-1, 0),
+                    colors.white
+                ),
 
-        doc.build(elements)
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -1),
+                    1,
+                    colors.grey
+                ),
 
-        # =================================================
-        # PDF DOWNLOAD
-        # =================================================
+                (
+                    "FONTNAME",
+                    (0, 0),
+                    (-1, 0),
+                    "Helvetica-Bold"
+                ),
 
-        with open(pdf_file, "rb") as f:
+                (
+                    "BOTTOMPADDING",
+                    (0, 0),
+                    (-1, 0),
+                    10
+                ),
+
+            ]))
+
+            elements.append(table)
+
+            elements.append(Spacer(1, 20))
+
+            # ==============================================
+            # BUILD PDF
+            # ==============================================
+
+            doc.build(elements)
+
+            pdf_buffer.seek(0)
+
+            # ==============================================
+            # DOWNLOAD PDF
+            # ==============================================
 
             st.download_button(
                 label="⬇️ Download PDF Report",
-                data=f,
+                data=pdf_buffer,
                 file_name="daily_glucose_report.pdf",
                 mime="application/pdf"
             )
 
-        # =================================================
-        # CLEANUP
-        # =================================================
+        else:
 
-        if os.path.exists(graph_file):
-
-            os.remove(graph_file)
+            st.warning(
+                "No glucose data available for report generation."
+            )
 
 else:
 
