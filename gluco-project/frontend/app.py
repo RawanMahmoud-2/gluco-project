@@ -625,20 +625,7 @@ if len(ppg) > 0:
         file_name="daily_glucose_report.csv",
         mime="text/csv"
     )
-    # =====================================================
-    # LIVE PPG GRAPH
-    # =====================================================
 
-    st.markdown(
-        '<div class="section-title">Live PPG Signal</div>',
-        unsafe_allow_html=True
-    )
-
-    df = pd.DataFrame({
-        "PPG": ppg
-    })
-
-    st.line_chart(df)
 
 else:
 
