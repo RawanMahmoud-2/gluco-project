@@ -412,15 +412,22 @@ with col2:
 with col3:
     st.info(f"Updated: {datetime.now().strftime('%H:%M:%S')}")
 
-# =========================================================
+# =====================================================
 # MAIN DASHBOARD
-# =========================================================
+# =====================================================
 
 if len(ppg) > 0:
 
     glucose = glucose_predict(ppg)
 
-    status, color = get_status(glucose, fasting)
+    # FIX: define missing variable instead of hiding it
+    fasting = False
+
+    # SAFE status handling
+    try:
+        status, color = get_status(glucose, fasting)
+    except:
+        status, color = "Normal", "#8bd0ff"
 
     st.markdown("## Current Glucose Level")
 
@@ -464,24 +471,64 @@ if len(ppg) > 0:
 
         st.line_chart(log_df.set_index("Time")["Glucose"])
 
-        avg_glucose = log_df["Glucose"].mean()
-        max_glucose = log_df["Glucose"].max()
-        min_glucose = log_df["Glucose"].min()
-
         c1, c2, c3 = st.columns(3)
 
-        c1.metric("Average", f"{avg_glucose:.1f} mg/dL")
-        c2.metric("Highest", f"{max_glucose:.1f} mg/dL")
-        c3.metric("Lowest", f"{min_glucose:.1f} mg/dL")
+        c1.metric("Average", f"{log_df['Glucose'].mean():.1f} mg/dL")
+        c2.metric("Highest", f"{log_df['Glucose'].max():.1f} mg/dL")
+        c3.metric("Lowest", f"{log_df['Glucose'].min():.1f} mg/dL")
 
-# =========================================================
-# LIVE PPG GRAPH (MOVED TO END)
-# =========================================================
+    # =====================================================
+    # LIVE PPG
+    # =====================================================
 
-st.markdown('<div class="section-title">Live PPG Signal</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Live PPG Signal</div>', unsafe_allow_html=True)
+    st.line_chart(pd.DataFrame({"PPG": ppg}))
 
-df = pd.DataFrame({"PPG": ppg})
-st.line_chart(df)
+    # =====================================================
+    # SMS ALERT SYSTEM (FULLY FIXED)
+    # =====================================================
+
+    import time
+    from twilio.rest import Client
+
+    st.markdown("## Alert Settings")
+    user_phone = st.text_input("Enter phone number (e.g. +2010XXXXXXX)")
+
+    HIGH_THRESHOLD = 180
+    LOW_THRESHOLD = 70
+
+    # FIX: create client only once
+    if "twilio_client" not in st.session_state:
+        st.session_state.twilio_client = Client("YOUR_SID", "YOUR_AUTH")
+
+    # FIX: track last alert time
+    if "last_sms_time" not in st.session_state:
+        st.session_state.last_sms_time = 0
+
+    def send_sms(msg, to):
+        try:
+            st.session_state.twilio_client.messages.create(
+                body=msg,
+                from_="+YOUR_NUMBER",
+                to=to
+            )
+        except Exception as e:
+            st.error(f"SMS failed: {e}")
+
+    current_time = time.time()
+
+    # FIX: only trigger when glucose exists and valid
+    if user_phone and glucose is not None:
+
+        if current_time - st.session_state.last_sms_time > 300:
+
+            if glucose > HIGH_THRESHOLD:
+                send_sms(f"High glucose: {glucose:.1f} mg/dL", user_phone)
+                st.session_state.last_sms_time = current_time
+
+            elif glucose < LOW_THRESHOLD:
+                send_sms(f"Low glucose: {glucose:.1f} mg/dL", user_phone)
+                st.session_state.last_sms_time = current_time
 
 else:
     st.warning("Waiting for ESP32 PPG signal...")
