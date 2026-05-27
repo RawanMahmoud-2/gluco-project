@@ -343,29 +343,31 @@ col1, col2 = st.columns([1, 4])
 with col1:
 
     if os.path.exists(logo_path):
-        st.image(logo_path, width=220)
+        st.image(logo_path, width=400)
 
 with col2:
 
     st.markdown("""
-    <h1 style="
-        font-size:72px;
-        font-weight:900;
-        margin-bottom:0;
-        color:#8fd3ff !important;
-        line-height:1;
-    ">
-        Gluco-Guard
-    </h1>
+   <h1 style="
+    font-size:72px;
+    font-weight:900;
+    margin-bottom:0;
+    line-height:1;
+   ">
+    <span style="color:#c7d0d9;">Gluco</span><span style="color:#5db8ff;">Guard</span>
+   </h1>
 
-    <p style="
-        font-size:24px;
-        color:#b9dfff !important;
-        margin-top:10px;
-    ">
-        Stay aware, stay healthy, stay in Guard
-    </p>
+   <p style="
+    font-size:24px;
+    color:#dff2ff !important;
+    margin-top:10px;
+    font-weight:500;
+   ">
+    Stay aware. Stay healthy. Stay in Guard.
+   </p>
+    
     """, unsafe_allow_html=True)
+
 
 # =========================================================
 # STATUS FUNCTION
@@ -502,7 +504,10 @@ with col1:
 
 with col2:
 
-    st.info(f"Samples: {len(ppg)}")
+         log_df = pd.read_csv(LOG_FILE)
+    measurement_count = len(log_df)
+    
+    st.info(f"Measurements: {measurement_count}")
 
 with col3:
 
