@@ -1,32 +1,12 @@
+
 import streamlit as st
 import requests
 import pandas as pd
 import numpy as np
 import os
-import io
-import gc
-import time
-
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from gluco_predict import glucose_predict
-
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-    Table,
-    TableStyle,
-    Image
-)
-
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import letter
-
-import matplotlib.pyplot as plt
-
-from twilio.rest import Client
 
 # =========================================================
 # PAGE CONFIG
@@ -42,7 +22,7 @@ st.set_page_config(
 # AUTO REFRESH
 # =========================================================
 
-st_autorefresh(interval=60000, key="refresh")
+st_autorefresh(interval=15000, key="refresh")
 
 # =========================================================
 # BACKEND URL
@@ -66,6 +46,7 @@ if not os.path.exists(LOG_FILE):
     pd.DataFrame(
         columns=["Time", "Glucose"]
     ).to_csv(LOG_FILE, index=False)
+
 
 # =========================================================
 # CSS
@@ -217,6 +198,8 @@ textarea {
 /* CLEAN WHITE SELECTBOX FIX */
 /* ===================================================== */
 
+/* main container */
+
 div[data-baseweb="select"] {
     background: white !important;
     border-radius: 14px !important;
@@ -224,11 +207,15 @@ div[data-baseweb="select"] {
     box-shadow: none !important;
 }
 
+/* inner control */
+
 div[data-baseweb="select"] > div {
     background: white !important;
     border: none !important;
     box-shadow: none !important;
 }
+
+/* input field */
 
 div[data-baseweb="select"] input {
     background: white !important;
@@ -239,14 +226,20 @@ div[data-baseweb="select"] input {
     box-shadow: none !important;
 }
 
+/* remove focus glow */
+
 div[data-baseweb="select"]:focus-within {
     outline: none !important;
     box-shadow: none !important;
 }
 
+/* selected text */
+
 div[data-baseweb="select"] * {
     color: black !important;
 }
+
+/* remove weird borders */
 
 div[data-baseweb="select"] div {
     border: none !important;
@@ -302,7 +295,6 @@ div[data-baseweb="select"] div {
 
     font-weight: 800 !important;
 }
-
 /* ===================================================== */
 /* BUTTON */
 /* ===================================================== */
@@ -365,9 +357,8 @@ with col2:
    ">
     Stay aware. Stay healthy. Stay in Guard.
    </p>
-
+    
     """, unsafe_allow_html=True)
-
 # =========================================================
 # STATUS FUNCTION
 # =========================================================
@@ -467,14 +458,10 @@ try:
         data = response.json()
 
         ppg = data.get("ppg", [])
-
         ppg = [
-            x for x in ppg
-            if isinstance(x, (int, float))
-        ]
-
-        # MEMORY FIX
-        ppg = ppg[-300:]
+    x for x in ppg
+    if isinstance(x, (int, float))
+                ]
 
     else:
 
@@ -489,6 +476,7 @@ except Exception as e:
     ppg = []
 
     st.error(f"Connection Error: {e}")
+
 
 # =========================================================
 # STATUS BAR
@@ -506,20 +494,7 @@ with col1:
 
 with col2:
 
-    log_df = pd.read_csv(LOG_FILE)
-
-    # MEMORY FIX
-    MAX_ROWS = 500
-
-    if len(log_df) > MAX_ROWS:
-
-        log_df = log_df.tail(MAX_ROWS)
-
-        log_df.to_csv(LOG_FILE, index=False)
-
-    measurement_count = len(log_df)
-
-    st.info(f"Measurements: {measurement_count}")
+    st.info(f"Samples: {len(ppg)}")
 
 with col3:
 
@@ -570,6 +545,7 @@ if len(ppg) > 0:
     """,
     unsafe_allow_html=True
 )
+    
 
     # =====================================================
     # SAVE LOG
@@ -596,13 +572,6 @@ if len(ppg) > 0:
     # =====================================================
 
     log_df = pd.read_csv(LOG_FILE)
-
-    # MEMORY FIX
-    if len(log_df) > 500:
-
-        log_df = log_df.tail(500)
-
-        log_df.to_csv(LOG_FILE, index=False)
 
     # =====================================================
     # DAILY TREND
@@ -645,6 +614,18 @@ if len(ppg) > 0:
         )
 
     # =====================================================
+    # DOWNLOAD REPORT
+    # =====================================================
+
+    csv = log_df.to_csv(index=False)
+
+    st.download_button(
+        label="⬇ Download Daily Report",
+        data=csv,
+        file_name="daily_glucose_report.csv",
+        mime="text/csv"
+    )
+    # =====================================================
     # LIVE PPG GRAPH
     # =====================================================
 
@@ -654,253 +635,15 @@ if len(ppg) > 0:
     )
 
     df = pd.DataFrame({
-        "PPG": ppg[-300:]
+        "PPG": ppg
     })
 
     st.line_chart(df)
 
-    # =====================================================
-    # SMS ALERT SYSTEM
-    # =====================================================
-
-    st.markdown("## Alert Settings")
-
-    user_phone = st.text_input(
-        "Enter phone number (e.g. +2010XXXXXXX)"
-    )
-
-    HIGH_THRESHOLD = 180
-    LOW_THRESHOLD = 70
-
-    if "twilio_client" not in st.session_state:
-
-        st.session_state.twilio_client = Client(
-            os.getenv("TWILIO_SID"),
-            os.getenv("TWILIO_AUTH")
-        )
-
-    if "last_sms_time" not in st.session_state:
-
-        st.session_state.last_sms_time = 0
-
-    def send_sms(msg, to):
-
-        try:
-
-            st.session_state.twilio_client.messages.create(
-                body=msg,
-                from_=os.getenv("TWILIO_PHONE"),
-                to=to
-            )
-
-        except Exception as e:
-
-            st.error(f"SMS failed: {e}")
-
-    current_time = time.time()
-
-    if user_phone:
-
-        if current_time - st.session_state.last_sms_time > 300:
-
-            if glucose > HIGH_THRESHOLD:
-
-                send_sms(
-                    f"High glucose alert: {glucose:.1f} mg/dL",
-                    user_phone
-                )
-
-                st.session_state.last_sms_time = current_time
-
-            elif glucose < LOW_THRESHOLD:
-
-                send_sms(
-                    f"Low glucose alert: {glucose:.1f} mg/dL",
-                    user_phone
-                )
-
-                st.session_state.last_sms_time = current_time
-
-    # =====================================================
-    # PDF REPORT
-    # =====================================================
-
-    if st.button("Generate PDF Report"):
-
-        if len(log_df) > 0:
-
-            img_buffer = io.BytesIO()
-
-            plt.figure(figsize=(8, 4))
-
-            plt.plot(
-                log_df["Time"],
-                log_df["Glucose"],
-                linewidth=2
-            )
-
-            plt.xlabel("Time")
-            plt.ylabel("Glucose (mg/dL)")
-            plt.title("Daily Glucose Trend")
-
-            plt.xticks(rotation=25)
-
-            plt.tight_layout()
-
-            plt.savefig(
-                img_buffer,
-                format="png"
-            )
-
-            # MEMORY FIX
-            plt.close("all")
-            gc.collect()
-
-            img_buffer.seek(0)
-
-            pdf_buffer = io.BytesIO()
-
-            doc = SimpleDocTemplate(
-                pdf_buffer,
-                pagesize=letter
-            )
-
-            styles = getSampleStyleSheet()
-
-            elements = []
-
-            title = Paragraph(
-                "<b>Gluco-Guard Daily Report</b>",
-                styles['Title']
-            )
-
-            elements.append(title)
-
-            elements.append(Spacer(1, 20))
-
-            patient_info = f"""
-            <b>Patient Name:</b> {name}<br/>
-            <b>Age:</b> {age}<br/>
-            <b>Gender:</b> {gender}<br/>
-            <b>Diabetes Status:</b> {diabetes_type}<br/>
-            <b>Meal Status:</b> {meal_state}<br/>
-            <b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-            """
-
-            info_paragraph = Paragraph(
-                patient_info,
-                styles['BodyText']
-            )
-
-            elements.append(info_paragraph)
-
-            elements.append(Spacer(1, 20))
-
-            elements.append(
-                Paragraph(
-                    "<b>Daily Glucose Trend</b>",
-                    styles['Heading2']
-                )
-            )
-
-            elements.append(Spacer(1, 10))
-
-            img = Image(
-                img_buffer,
-                width=450,
-                height=220
-            )
-
-            elements.append(img)
-
-            elements.append(Spacer(1, 20))
-
-            elements.append(
-                Paragraph(
-                    "<b>Glucose Readings Table</b>",
-                    styles['Heading2']
-                )
-            )
-
-            elements.append(Spacer(1, 10))
-
-            table_df = log_df.copy()
-
-            table_df["Time"] = table_df["Time"].astype(str)
-
-            table_data = [
-                table_df.columns.tolist()
-            ] + table_df.values.tolist()
-
-            table = Table(table_data)
-
-            table.setStyle(TableStyle([
-
-                (
-                    "BACKGROUND",
-                    (0, 0),
-                    (-1, 0),
-                    colors.HexColor("#3a8dff")
-                ),
-
-                (
-                    "TEXTCOLOR",
-                    (0, 0),
-                    (-1, 0),
-                    colors.white
-                ),
-
-                (
-                    "GRID",
-                    (0, 0),
-                    (-1, -1),
-                    1,
-                    colors.grey
-                ),
-
-                (
-                    "FONTNAME",
-                    (0, 0),
-                    (-1, 0),
-                    "Helvetica-Bold"
-                ),
-
-                (
-                    "BOTTOMPADDING",
-                    (0, 0),
-                    (-1, 0),
-                    10
-                ),
-
-            ]))
-
-            elements.append(table)
-
-            elements.append(Spacer(1, 20))
-
-            doc.build(elements)
-
-            pdf_buffer.seek(0)
-
-            st.download_button(
-                label="⬇️ Download PDF Report",
-                data=pdf_buffer,
-                file_name="daily_glucose_report.pdf",
-                mime="application/pdf"
-            )
-
-            # MEMORY FIX
-            img_buffer.close()
-            pdf_buffer.close()
-
-            gc.collect()
-
-        else:
-
-            st.warning(
-                "No glucose data available for report generation."
-            )
-
 else:
 
     st.warning("Waiting for ESP32 PPG signal...")
+
+    """, unsafe_allow_html=True)
+
+
