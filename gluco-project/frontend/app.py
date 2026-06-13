@@ -655,7 +655,7 @@ if len(ppg) > 0:
     # =====================================================
     # DOWNLOAD REPORT
     # =====================================================
-       report_lines = []
+    report_lines = []
     
     report_lines.append("GLUCO-GUARD DAILY REPORT")
     report_lines.append("")
