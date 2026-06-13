@@ -655,64 +655,36 @@ if len(ppg) > 0:
     # =====================================================
     # DOWNLOAD REPORT
     # =====================================================
-
-     # =====================================================
-    # CREATE REPORT DATA
-    # =====================================================
-    
-    report_lines = []
+       report_lines = []
     
     report_lines.append("GLUCO-GUARD DAILY REPORT")
     report_lines.append("")
-    
-    # Patient information
-    
     report_lines.append("PATIENT INFORMATION")
     report_lines.append(f"Name,{name}")
     report_lines.append(f"Age,{age}")
     report_lines.append(f"Gender,{gender}")
     report_lines.append(f"Diabetes Status,{diabetes_type}")
     report_lines.append(f"Meal Status,{meal_state}")
-    
     report_lines.append("")
     
-    # Current reading
+    report_lines.append("CURRENT SUMMARY")
     
-    report_lines.append("CURRENT READING")
-    report_lines.append(f"Glucose,{glucose:.1f} mg/dL")
-    report_lines.append(f"Status,{status}")
+    if len(log_df) > 0:
+        avg_glucose = log_df["Glucose"].mean()
+        max_glucose = log_df["Glucose"].max()
+        min_glucose = log_df["Glucose"].min()
     
-    report_lines.append("")
-    
-    # Statistics
-    
-    report_lines.append("SUMMARY")
-    
-    report_lines.append(
-        f"Average,{avg_glucose:.1f} mg/dL"
-    )
-    
-    report_lines.append(
-        f"Highest,{max_glucose:.1f} mg/dL"
-    )
-    
-    report_lines.append(
-        f"Lowest,{min_glucose:.1f} mg/dL"
-    )
+        report_lines.append(f"Average,{avg_glucose:.1f}")
+        report_lines.append(f"Highest,{max_glucose:.1f}")
+        report_lines.append(f"Lowest,{min_glucose:.1f}")
+    else:
+        report_lines.append("No data available")
     
     report_lines.append("")
-    
-    # Daily trend data
-    
-    report_lines.append("DAILY GLUCOSE TREND")
+    report_lines.append("DAILY TREND DATA")
     
     for _, row in log_df.iterrows():
-    
-        report_lines.append(
-    
-            f"{row['Time']},{row['Glucose']:.1f}"
-    
-        )
+        report_lines.append(f"{row['Time']},{row['Glucose']}")
     
     csv = "\n".join(report_lines)
 
