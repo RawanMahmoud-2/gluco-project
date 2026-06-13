@@ -655,38 +655,7 @@ if len(ppg) > 0:
     # =====================================================
     # DOWNLOAD REPORT
     # =====================================================
-    report_lines = []
-    
-    report_lines.append("GLUCO-GUARD DAILY REPORT")
-    report_lines.append("")
-    report_lines.append("PATIENT INFORMATION")
-    report_lines.append(f"Name,{name}")
-    report_lines.append(f"Age,{age}")
-    report_lines.append(f"Gender,{gender}")
-    report_lines.append(f"Diabetes Status,{diabetes_type}")
-    report_lines.append(f"Meal Status,{meal_state}")
-    report_lines.append("")
-    
-    report_lines.append("CURRENT SUMMARY")
-    
-    if len(log_df) > 0:
-        avg_glucose = log_df["Glucose"].mean()
-        max_glucose = log_df["Glucose"].max()
-        min_glucose = log_df["Glucose"].min()
-    
-        report_lines.append(f"Average,{avg_glucose:.1f}")
-        report_lines.append(f"Highest,{max_glucose:.1f}")
-        report_lines.append(f"Lowest,{min_glucose:.1f}")
-    else:
-        report_lines.append("No data available")
-    
-    report_lines.append("")
-    report_lines.append("DAILY TREND DATA")
-    
-    for _, row in log_df.iterrows():
-        report_lines.append(f"{row['Time']},{row['Glucose']}")
-    
-    csv = "\n".join(report_lines)
+    csv = log_df.to_csv(index=False)
 
     st.download_button(
         label="⬇ Download Daily Report",
