@@ -484,7 +484,7 @@ try:
             st.session_state.last_ppg = ppg
             st.session_state.last_update = datetime.now()
             
-            st.rerun()
+            
 
     else:
 
@@ -650,20 +650,50 @@ if len(ppg) > 0:
             "Lowest",
             f"{min_glucose:.1f} mg/dL"
         )
+        # =====================================================
+        # DOWNLOAD REPORT
+        # =====================================================
+    
+        report = f"""
+        ===============================
+              GLUCO-GUARD REPORT
+        ===============================
+        
+        Patient Information
+        -------------------------------
+        Name           : {name}
+        Age            : {age}
+        Gender         : {gender}
+        Diabetes Type  : {diabetes_type}
+        Meal Status    : {meal_state}
+        
+        Summary
+        -------------------------------
+        Average Glucose : {avg_glucose:.1f} mg/dL
+        Highest Glucose : {max_glucose:.1f} mg/dL
+        Lowest Glucose  : {min_glucose:.1f} mg/dL
+        Total Readings  : {len(log_df)}
+        
+        All Readings
+        -------------------------------
+        """
+    
+        for _, row in log_df.iterrows():
+    
+            report += (
+                f"{row['Time']}    "
+                f"{row['Glucose']:.1f} mg/dL\n"
+            )
+    
+        st.download_button(
+            label="⬇ Download Daily Report",
+            data=report,
+            file_name="daily_glucose_report.txt",
+            mime="text/plain"
+        )
+      
 
-    # =====================================================
-    # DOWNLOAD REPORT
-    # =====================================================
-
-    csv = log_df.to_csv(index=False)
-
-    st.download_button(
-        label="⬇ Download Daily Report",
-        data=csv,
-        file_name="daily_glucose_report.csv",
-        mime="text/csv"
-    )
-
+    
 else:
 
     st.warning("Waiting for ESP32 PPG signal...")
