@@ -6,7 +6,6 @@ import os
 from datetime import datetime
 from gluco_predict import glucose_predict
 
-
 # =========================================================
 # PAGE CONFIG
 # =========================================================
@@ -655,6 +654,7 @@ if len(ppg) > 0:
     # =====================================================
     # DOWNLOAD REPORT
     # =====================================================
+
     csv = log_df.to_csv(index=False)
 
     st.download_button(
